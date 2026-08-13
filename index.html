@@ -283,8 +283,8 @@
       <div id="participantsWrap"></div>
 
       <h4 style="margin:24px 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--amber);">2. Tabla actual de la J1</h4>
-      <p class="hint" style="margin-bottom:10px;">Traela automática desde Wikipedia (gratis, sin API key), o cargá los números a mano copiándolos de <a href="https://www.jleague.jp/en/j1/standings/" target="_blank" rel="noopener">jleague.jp</a>.</p>
-      <button class="btn" id="btnFetchWiki" type="button">Traer tabla desde Wikipedia</button>
+      <p class="hint" style="margin-bottom:10px;">Traela automática con un clic, o cargá los números a mano copiándolos de <a href="https://www.jleague.jp/en/j1/standings/" target="_blank" rel="noopener">jleague.jp</a>.</p>
+      <button class="btn" id="btnFetchWiki" type="button">Traer tabla actual</button>
       <span id="wikiStatus" class="hint" style="margin-left:10px;"></span>
       <div class="board">
         <table class="std-table">
@@ -341,7 +341,7 @@
 </main>
 
 <footer>
-  Hamilton League · Tabla desde Wikipedia (2026–27 J1 League) con carga manual de respaldo. Hecho para hostear gratis en GitHub Pages / Netlify.
+  Hamilton League · Tabla actualizada con un clic (J1 League 2026–27), con carga manual de respaldo. Hecho para hostear gratis en GitHub Pages / Netlify.
 </footer>
 
 <script>
@@ -729,7 +729,12 @@
 
   function renderStandingsInputs(){
     let rows = "";
-    TEAMS.forEach(team=>{
+    const sortedTeams = [...TEAMS].sort((a,b)=>{
+      const ptsA = Number(config.standings[a]?.pts) || 0;
+      const ptsB = Number(config.standings[b]?.pts) || 0;
+      return ptsB - ptsA;
+    });
+    sortedTeams.forEach(team=>{
       const s = config.standings[team] || {played:"",win:"",draw:"",lose:"",pts:""};
       rows += `<tr>
         <td class="team-name">${team}</td>
@@ -828,13 +833,13 @@
   }
 
   async function fetchWikipediaStandings(){
-    els.wikiStatus.textContent = "Buscando la tabla en Wikipedia…";
+    els.wikiStatus.textContent = "Buscando la tabla actual…";
     els.btnFetchWiki.disabled = true;
     try{
       const {newStandings, matched} = await fetchWikipediaStandingsRaw();
       config.standings = {...config.standings, ...newStandings};
       renderStandingsInputs();
-      els.wikiStatus.textContent = `Listo — se cargaron ${matched} equipos. Revisá los números antes de guardar por si la tabla de Wikipedia está atrasada.`;
+      els.wikiStatus.textContent = `Listo — se cargaron ${matched} equipos. Revisá los números antes de guardar por si están atrasados.`;
     }catch(err){
       els.wikiStatus.textContent = "Error: " + err.message;
     }finally{
@@ -846,7 +851,7 @@
   document.getElementById("btnQuickWiki").addEventListener("click", async ()=>{
     const btn = document.getElementById("btnQuickWiki");
     btn.disabled = true;
-    setStatus(false, "Actualizando desde Wikipedia…");
+    setStatus(false, "Actualizando tabla…");
     try{
       if(!config) config = defaultConfig();
       const {newStandings, matched} = await fetchWikipediaStandingsRaw();
