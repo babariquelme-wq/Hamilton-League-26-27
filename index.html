@@ -198,6 +198,7 @@
   <p class="subtitle">Cada participante eligió 2 clubes de la J1 League de Japón. Sus puntos reales se suman fecha a fecha — y cada uno tiene dos jornadas comodín para duplicarlos.</p>
   <div class="hero-actions">
     <button class="btn primary" id="btnLogin">Elegí tu equipo</button>
+    <button class="btn primary" id="btnQuickWiki" title="Trae la tabla actual de Wikipedia y la guarda, sin copiar/pegar nada">📊 Actualizar tabla (Wikipedia)</button>
     <button class="btn" id="btnSetup">Configurar / actualizar tabla</button>
     <button class="btn small" id="btnSync" title="Traer los últimos datos guardados">🔄 Sincronizar</button>
     <span class="status-pill" id="statusPill"><span class="status-dot off" id="statusDot"></span><span id="statusText">Sin configurar</span></span>
@@ -358,6 +359,8 @@
     setTimeout(()=>{ overlay.style.display = "none"; }, 750);
   }
   skipBtn.addEventListener("click", endIntro);
+  window.addEventListener("wheel", ()=>{ if(!finished) endIntro(); }, {passive:true});
+  window.addEventListener("touchmove", ()=>{ if(!finished) endIntro(); }, {passive:true});
   setTimeout(endIntro, 12000); // seguro: nunca bloquea la página más de 12s
 
   try{
@@ -599,6 +602,7 @@
   "use strict";
 
   const LS_KEY = "hamiltonLeagueConfig";
+  const LS_CLOUD_KEY = "hamiltonLeagueCloudCreds";
 
   // ======= ALMACENAMIENTO COMPARTIDO (JSONBin.io) =======
   // Estos dos valores quedan vacíos hasta que uses el botón "Crear
@@ -607,7 +611,20 @@
   // falta tocar código a mano.
   const JSONBIN_API_KEY = "";
   const JSONBIN_BIN_ID = "";
-  const SHARED_STORAGE_ENABLED = !!(JSONBIN_API_KEY && JSONBIN_BIN_ID);
+
+  // Si este archivo no trae la key/bin incrustados (por ejemplo, porque es
+  // una actualización nueva que subiste encima de una ya conectada), se usa
+  // la conexión guardada en este navegador la última vez que la creaste acá.
+  function getCloudCreds(){
+    if(JSONBIN_API_KEY && JSONBIN_BIN_ID) return {apiKey: JSONBIN_API_KEY, binId: JSONBIN_BIN_ID};
+    try{
+      const saved = JSON.parse(localStorage.getItem(LS_CLOUD_KEY));
+      if(saved && saved.apiKey && saved.binId) return saved;
+    }catch(e){}
+    return null;
+  }
+  const CLOUD = getCloudCreds();
+  const SHARED_STORAGE_ENABLED = !!CLOUD;
 
   const TEAMS = [
     "Avispa Fukuoka","Cerezo Osaka","Fagiano Okayama","FC Tokyo","Gamba Osaka",
@@ -626,8 +643,8 @@
   async function loadConfig(){
     if(SHARED_STORAGE_ENABLED){
       try{
-        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-          headers: { "X-Master-Key": JSONBIN_API_KEY }
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${CLOUD.binId}/latest`, {
+          headers: { "X-Master-Key": CLOUD.apiKey }
         });
         if(!res.ok) throw new Error("cloud read failed: " + res.status);
         const data = await res.json();
@@ -645,9 +662,9 @@
     localStorage.setItem(LS_KEY, JSON.stringify(cfg));
     if(SHARED_STORAGE_ENABLED){
       try{
-        await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+        await fetch(`https://api.jsonbin.io/v3/b/${CLOUD.binId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json", "X-Master-Key": JSONBIN_API_KEY },
+          headers: { "Content-Type": "application/json", "X-Master-Key": CLOUD.apiKey },
           body: JSON.stringify(cfg)
         });
       }catch(e){
@@ -696,14 +713,12 @@
   }
 
   function renderParticipantForm(){
-    const names = ["Participante 1","Participante 2","Participante 3"];
     let html = "";
     for(let i=0;i<3;i++){
       const p = config.participants[i];
       html += `<div class="participant-block">
-        <h4>${names[i]}</h4>
+        <h4>${PARTICIPANT_NAMES[i]}</h4>
         <div class="field-row cols-3">
-          <div><label>Nombre</label><input type="text" class="p-name" data-idx="${i}" value="${p.name||""}" placeholder="Ej: Alvaro"></div>
           <div><label>Equipo 1 (libre)</label><select class="p-team" data-idx="${i}" data-slot="0">${teamOptions(p.teams[0], FREE_TEAMS)}</select></div>
           <div><label>Equipo 2 (ascendidos)</label><select class="p-team" data-idx="${i}" data-slot="1">${teamOptions(p.teams[1], EXCLUDED_TEAMS)}</select></div>
         </div>
@@ -750,67 +765,71 @@
     return best;
   }
 
+  async function fetchWikipediaStandingsRaw(){
+    const pageTitle = "2026\u201327 J1 League";
+    const url = "https://en.wikipedia.org/w/api.php?action=parse&page="
+      + encodeURIComponent(pageTitle) + "&format=json&prop=text&origin=*";
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("No se pudo conectar con Wikipedia (" + res.status + ")");
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.info || "Wikipedia no encontró esa página todavía.");
+    const html = data.parse.text["*"];
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const tables = Array.from(doc.querySelectorAll("table"));
+    let standingsTable = null;
+    let headerMap = null;
+    for(const table of tables){
+      const headerRow = table.querySelector("tr");
+      if(!headerRow) continue;
+      const headers = Array.from(headerRow.querySelectorAll("th")).map(th=>th.textContent.trim());
+      if(headers.some(h=>/^Pts$/i.test(h)) && headers.some(h=>/^(Team|Club)$/i.test(h))){
+        const map = {};
+        headers.forEach((h,i)=>{
+          if(/^Pos$/i.test(h)) map.pos=i;
+          else if(/^(Team|Club)$/i.test(h)) map.team=i;
+          else if(/^Pld$/i.test(h)) map.played=i;
+          else if(/^W$/i.test(h)) map.win=i;
+          else if(/^D$/i.test(h)) map.draw=i;
+          else if(/^L$/i.test(h)) map.lose=i;
+          else if(/^Pts$/i.test(h)) map.pts=i;
+        });
+        if(map.team!==undefined && map.pts!==undefined){
+          standingsTable = table; headerMap = map; break;
+        }
+      }
+    }
+    if(!standingsTable) throw new Error("No encontré la tabla de posiciones en esa página.");
+
+    const rows = Array.from(standingsTable.querySelectorAll("tr")).slice(1);
+    const newStandings = {};
+    let matched = 0;
+    rows.forEach(row=>{
+      const cells = Array.from(row.children);
+      if(cells.length < 3) return;
+      const teamCellRaw = cells[headerMap.team];
+      if(!teamCellRaw) return;
+      const teamName = teamCellRaw.textContent.trim();
+      const team = matchTeam(teamName);
+      if(!team) return;
+      const num = (idx)=> idx!==undefined && cells[idx] ? (parseInt(cells[idx].textContent.trim(),10) || 0) : 0;
+      newStandings[team] = {
+        played: num(headerMap.played),
+        win: num(headerMap.win),
+        draw: num(headerMap.draw),
+        lose: num(headerMap.lose),
+        pts: num(headerMap.pts),
+      };
+      matched++;
+    });
+    if(matched < 15) throw new Error("Encontré la tabla pero no pude leer bien los equipos (matched: " + matched + ").");
+    return {newStandings, matched};
+  }
+
   async function fetchWikipediaStandings(){
     els.wikiStatus.textContent = "Buscando la tabla en Wikipedia…";
     els.btnFetchWiki.disabled = true;
     try{
-      const pageTitle = "2026\u201327 J1 League";
-      const url = "https://en.wikipedia.org/w/api.php?action=parse&page="
-        + encodeURIComponent(pageTitle) + "&format=json&prop=text&origin=*";
-      const res = await fetch(url);
-      if(!res.ok) throw new Error("No se pudo conectar con Wikipedia (" + res.status + ")");
-      const data = await res.json();
-      if(data.error) throw new Error(data.error.info || "Wikipedia no encontró esa página todavía.");
-      const html = data.parse.text["*"];
-      const doc = new DOMParser().parseFromString(html, "text/html");
-      const tables = Array.from(doc.querySelectorAll("table"));
-      let standingsTable = null;
-      let headerMap = null;
-      for(const table of tables){
-        const headerRow = table.querySelector("tr");
-        if(!headerRow) continue;
-        const headers = Array.from(headerRow.querySelectorAll("th")).map(th=>th.textContent.trim());
-        if(headers.some(h=>/^Pts$/i.test(h)) && headers.some(h=>/^(Team|Club)$/i.test(h))){
-          const map = {};
-          headers.forEach((h,i)=>{
-            if(/^Pos$/i.test(h)) map.pos=i;
-            else if(/^(Team|Club)$/i.test(h)) map.team=i;
-            else if(/^Pld$/i.test(h)) map.played=i;
-            else if(/^W$/i.test(h)) map.win=i;
-            else if(/^D$/i.test(h)) map.draw=i;
-            else if(/^L$/i.test(h)) map.lose=i;
-            else if(/^Pts$/i.test(h)) map.pts=i;
-          });
-          if(map.team!==undefined && map.pts!==undefined){
-            standingsTable = table; headerMap = map; break;
-          }
-        }
-      }
-      if(!standingsTable) throw new Error("No encontré la tabla de posiciones en esa página.");
-
-      const rows = Array.from(standingsTable.querySelectorAll("tr")).slice(1);
-      const newStandings = {};
-      let matched = 0;
-      rows.forEach(row=>{
-        const cells = Array.from(row.children); // th/td mixed, in order
-        if(cells.length < 3) return;
-        const teamCellRaw = cells[headerMap.team];
-        if(!teamCellRaw) return;
-        const teamName = teamCellRaw.textContent.trim();
-        const team = matchTeam(teamName);
-        if(!team) return;
-        const num = (idx)=> idx!==undefined && cells[idx] ? (parseInt(cells[idx].textContent.trim(),10) || 0) : 0;
-        newStandings[team] = {
-          played: num(headerMap.played),
-          win: num(headerMap.win),
-          draw: num(headerMap.draw),
-          lose: num(headerMap.lose),
-          pts: num(headerMap.pts),
-        };
-        matched++;
-      });
-      if(matched < 15) throw new Error("Encontré la tabla pero no pude leer bien los equipos (matched: " + matched + "). Cargalos a mano por las dudas.");
-
+      const {newStandings, matched} = await fetchWikipediaStandingsRaw();
       config.standings = {...config.standings, ...newStandings};
       renderStandingsInputs();
       els.wikiStatus.textContent = `Listo — se cargaron ${matched} equipos. Revisá los números antes de guardar por si la tabla de Wikipedia está atrasada.`;
@@ -821,6 +840,27 @@
     }
   }
   els.btnFetchWiki.addEventListener("click", fetchWikipediaStandings);
+
+  document.getElementById("btnQuickWiki").addEventListener("click", async ()=>{
+    const btn = document.getElementById("btnQuickWiki");
+    btn.disabled = true;
+    setStatus(false, "Actualizando desde Wikipedia…");
+    try{
+      if(!config) config = defaultConfig();
+      const {newStandings, matched} = await fetchWikipediaStandingsRaw();
+      config.standings = {...config.standings, ...newStandings};
+      await saveConfig(config);
+      if(config.participants && config.participants.some(p=>p.name)){
+        renderDashboard();
+      } else {
+        setStatus(true, `Tabla actualizada (${matched} equipos) — faltan participantes`);
+      }
+    }catch(err){
+      setStatus(false, "Error: " + err.message);
+    }finally{
+      btn.disabled = false;
+    }
+  });
 
   function setStatus(ok, text){
     els.statusDot.classList.toggle("off", !ok);
@@ -901,10 +941,9 @@
     els.setupError.innerHTML = "";
     const participants = [];
     for(let i=0;i<3;i++){
-      const nameInput = document.querySelector(`.p-name[data-idx="${i}"]`);
       const slot0 = document.querySelector(`.p-team[data-idx="${i}"][data-slot="0"]`);
       const slot1 = document.querySelector(`.p-team[data-idx="${i}"][data-slot="1"]`);
-      const name = nameInput.value.trim() || `Participante ${i+1}`;
+      const name = PARTICIPANT_NAMES[i];
       const t0 = slot0.value, t1 = slot1.value;
       if(!t0 || !t1){
         els.setupError.innerHTML = `<div class="error-box">Elegí los 2 equipos de ${name}.</div>`;
@@ -1164,9 +1203,26 @@
     return data.metadata.id;
   }
 
-  function downloadConfiguredFile(apiKey, binId){
+  async function downloadConfiguredFile(apiKey, binId){
     const esc = s => String(s).replace(/\\/g,"\\\\").replace(/"/g,'\\"');
-    let html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+    let html;
+    try{
+      // pedimos el archivo original y limpio (tal como está en el servidor),
+      // en vez de una "foto" del DOM actual (que puede tener cosas ocultas por el uso, como la intro ya terminada)
+      const res = await fetch(window.location.href, {cache: "no-store"});
+      if(!res.ok) throw new Error("no ok");
+      html = await res.text();
+    }catch(e){
+      // respaldo: si falla (por ejemplo probando el archivo local con doble clic), usamos el DOM actual
+      const overlay = document.getElementById("introOverlay");
+      const prevStyle = overlay.getAttribute("style");
+      const hadFadeOut = overlay.classList.contains("fade-out");
+      overlay.style.display = "";
+      overlay.classList.remove("fade-out");
+      html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      if(prevStyle===null) overlay.removeAttribute("style"); else overlay.setAttribute("style", prevStyle);
+      if(hadFadeOut) overlay.classList.add("fade-out");
+    }
     html = html.replace('const JSONBIN_API_KEY = "";', `const JSONBIN_API_KEY = "${esc(apiKey)}";`);
     html = html.replace('const JSONBIN_BIN_ID = "";', `const JSONBIN_BIN_ID = "${esc(binId)}";`);
     const blob = new Blob([html], {type: "text/html"});
@@ -1184,7 +1240,8 @@
     statusEl.textContent = "Creando almacenamiento…";
     try{
       const binId = await createSharedStorage(apiKey);
-      downloadConfiguredFile(apiKey, binId);
+      localStorage.setItem(LS_CLOUD_KEY, JSON.stringify({apiKey, binId}));
+      await downloadConfiguredFile(apiKey, binId);
       statusEl.innerHTML = `✅ Listo — se descargó tu <b>index.html</b> ya conectado. Subilo a GitHub Pages / Netlify (reemplazando el archivo viejo) y compartí ese link con Roberto y Nicolas.`;
     }catch(err){
       statusEl.textContent = "Error: " + err.message;
