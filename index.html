@@ -198,7 +198,7 @@
   <p class="subtitle">Cada participante eligió 2 clubes de la J1 League de Japón. Sus puntos reales se suman fecha a fecha — y cada uno tiene dos jornadas comodín para duplicarlos.</p>
   <div class="hero-actions">
     <button class="btn primary" id="btnLogin">Elegí tu equipo</button>
-    <button class="btn primary" id="btnQuickWiki" title="Trae la tabla actual de Wikipedia y la guarda, sin copiar/pegar nada">📊 Actualizar tabla (Wikipedia)</button>
+    <button class="btn primary" id="btnQuickWiki" title="Trae la tabla actual y la guarda, con un solo clic">📊 Actualizar tabla</button>
     <button class="btn" id="btnSetup">Configurar / actualizar tabla</button>
     <button class="btn small" id="btnSync" title="Traer los últimos datos guardados">🔄 Sincronizar</button>
     <span class="status-pill" id="statusPill"><span class="status-dot off" id="statusDot"></span><span id="statusText">Sin configurar</span></span>
@@ -782,16 +782,18 @@
       const headerRow = table.querySelector("tr");
       if(!headerRow) continue;
       const headers = Array.from(headerRow.querySelectorAll("th")).map(th=>th.textContent.trim());
-      if(headers.some(h=>/^Pts$/i.test(h)) && headers.some(h=>/^(Team|Club)$/i.test(h))){
+      // Wikipedia a veces pega links de "v t e" al texto del header (ej. "Teamvte"),
+      // así que matcheamos por prefijo en vez de exacto.
+      if(headers.some(h=>/^Pts/i.test(h)) && headers.some(h=>/^(Team|Club)/i.test(h))){
         const map = {};
         headers.forEach((h,i)=>{
-          if(/^Pos$/i.test(h)) map.pos=i;
-          else if(/^(Team|Club)$/i.test(h)) map.team=i;
-          else if(/^Pld$/i.test(h)) map.played=i;
-          else if(/^W$/i.test(h)) map.win=i;
-          else if(/^D$/i.test(h)) map.draw=i;
-          else if(/^L$/i.test(h)) map.lose=i;
-          else if(/^Pts$/i.test(h)) map.pts=i;
+          if(/^Pos/i.test(h)) map.pos=i;
+          else if(/^(Team|Club)/i.test(h)) map.team=i;
+          else if(/^Pld/i.test(h)) map.played=i;
+          else if(/^W\b/i.test(h)) map.win=i;
+          else if(/^D\b/i.test(h)) map.draw=i;
+          else if(/^L\b/i.test(h)) map.lose=i;
+          else if(/^Pts/i.test(h)) map.pts=i;
         });
         if(map.team!==undefined && map.pts!==undefined){
           standingsTable = table; headerMap = map; break;
