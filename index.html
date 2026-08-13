@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAMILTON LEAGUE — J1 League 2026-27</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Oswald:wght@400;500;600;700&family=Press+Start+2P&family=Roboto+Condensed:ital,wght@0,400;0,600;0,700;1,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0A0A;
+    --panel:#111214;
+    --panel-2:#17181B;
+    --line: #262829;
+    --text:#F4F5F3;
+    --muted:#8A8E88;
+    --amber:#3FD16B;
+    --amber-dim:#1f6b39;
+    --red:#E63946;
+    --green:#3FD16B;
+    --blue:#4C8DFF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(ellipse 1200px 600px at 50% -10%, #14161a 0%, var(--bg) 60%);
+    color:var(--text);
+    font-family:'Roboto Condensed', sans-serif;
+    min-height:100vh;
+    padding-bottom:80px;
+  }
+  ::selection{ background:var(--amber); color:#111; }
+
+  .ticker-wrap{
+    background:#000; border-bottom:1px solid var(--line);
+    overflow:hidden; white-space:nowrap; height:34px; display:flex; align-items:center;
+  }
+  .ticker-tag{
+    background:var(--red); color:#fff; font-family:'Oswald',sans-serif; font-weight:700;
+    font-size:12px; letter-spacing:0.08em; padding:0 14px; height:34px;
+    display:flex; align-items:center; flex-shrink:0; z-index:2;
+  }
+  .ticker-track{
+    display:inline-block; padding-left:100%; animation: ticker 32s linear infinite;
+    font-size:13px; color:var(--muted); letter-spacing:0.02em;
+  }
+  .ticker-track b{ color:var(--amber); font-weight:700; }
+  @keyframes ticker{ 0%{transform:translateX(0);} 100%{transform:translateX(-100%);} }
+
+  header.hero{ padding:28px 24px 20px; max-width:1080px; margin:0 auto; position:relative; }
+  .flag-wrap{ display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+  .flag-jp{
+    width:52px; height:36px; background:#fff; border-radius:2px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 10px rgba(0,0,0,.5); flex-shrink:0;
+  }
+  .flag-jp span{ width:16px; height:16px; border-radius:50%; background:#E63946; display:block; }
+  .eyebrow{
+    font-family:'Anton', 'Archivo Black', sans-serif; font-style:italic;
+    font-size:clamp(20px, 3.2vw, 30px); color:var(--amber); text-transform:uppercase;
+    transform:skew(-6deg); display:inline-block;
+  }
+  h1.title{
+    font-family:'Anton', 'Archivo Black', sans-serif; font-style:italic;
+    font-size:clamp(40px, 8vw, 84px); line-height:0.94; margin:0 0 14px 0;
+    text-transform:uppercase; color:#fff; transform:skew(-4deg);
+  }
+  h1.title span{ color:var(--amber); }
+  .subtitle{ color:var(--muted); font-size:15px; max-width:600px; }
+  .hero-actions{ margin-top:18px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .btn{
+    font-family:'Oswald',sans-serif; font-weight:600; font-size:13px; letter-spacing:0.04em;
+    text-transform:uppercase; padding:10px 18px; border-radius:3px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--text); cursor:pointer; transition:.15s ease;
+  }
+  .btn:hover{ border-color:var(--amber); color:var(--amber); }
+  .btn.primary{ background:var(--amber); color:#0a1f10; border-color:var(--amber); }
+  .btn.primary:hover{ background:#5be387; }
+  .btn.small{ padding:6px 12px; font-size:11px; }
+  .status-pill{ font-size:12px; color:var(--muted); }
+  .status-dot{ display:inline-block; width:7px;height:7px;border-radius:50%; background:var(--green); margin-right:6px; box-shadow:0 0 6px var(--green); }
+  .status-dot.off{ background:#555; box-shadow:none; }
+
+  main{ max-width:1080px; margin:0 auto; padding:0 24px; }
+  .section{ margin-top:44px; }
+  .section-head{
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    border-bottom:2px solid var(--line); padding-bottom:10px; margin-bottom:16px; flex-wrap:wrap;
+  }
+  .section-num{ font-family:'Archivo Black',sans-serif; color:var(--amber-dim); font-size:13px; margin-right:10px; }
+  .section-title{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; font-size:20px; }
+  .section-sub{ color:var(--muted); font-size:13px; }
+
+  .board{ background:var(--panel); border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  table{ width:100%; border-collapse:collapse; }
+  thead th{
+    text-align:left; font-family:'Oswald',sans-serif; font-size:11px; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--muted); padding:10px 12px; background:#0d0e10;
+    border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  thead th.num, td.num{ text-align:center; }
+  tbody td{ padding:9px 12px; border-bottom:1px solid #1b1c1e; font-size:14px; white-space:nowrap; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:#16171a; }
+  tbody tr.top3 td:first-child{ box-shadow: inset 3px 0 0 var(--amber); }
+  .rank{ font-family:'Archivo Black',sans-serif; font-size:13px; color:var(--muted); width:28px; display:inline-block; }
+  tr.top3 .rank{ color:var(--amber); }
+  .team-name{ font-weight:600; }
+  .pts{ font-family:'Oswald',sans-serif; font-weight:700; color:var(--amber); font-size:15px; text-align:center; }
+  .owner-tag{ font-size:11px; color:var(--muted); display:block; margin-top:1px; }
+  .badge-joker{
+    display:inline-flex; align-items:center; gap:4px; font-family:'Oswald',sans-serif; font-size:10px;
+    font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:#fff; background:var(--red);
+    padding:2px 7px; border-radius:3px; margin-left:6px;
+  }
+  .muted-inline{ color:var(--muted); font-size:12px; }
+  .badge-trophy, .badge-rainbow{ margin-left:6px; font-size:14px; }
+  .penalty-warn{
+    background:#2a1f0c; border:1px solid #6b4f1f; color:#f0c98f;
+    padding:10px 12px; border-radius:4px; font-size:13px; margin-top:8px;
+  }
+  .penalty-applied{
+    background:#0f2418; border:1px solid #1f6b39; color:#8ff0b4;
+    padding:8px 12px; border-radius:4px; font-size:12px; margin-top:8px;
+  }
+
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:20px; }
+  .field-row{ display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:16px; }
+  @media(min-width:640px){
+    .field-row.cols-2{ grid-template-columns:1fr 1fr; }
+    .field-row.cols-3{ grid-template-columns:1fr 1fr 1fr; }
+  }
+  label{ display:block; font-family:'Oswald',sans-serif; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  input[type=text], input[type=number], select{
+    width:100%; background:#0d0e10; border:1px solid var(--line); color:var(--text);
+    padding:9px 10px; border-radius:4px; font-family:'Roboto Condensed', sans-serif; font-size:14px;
+  }
+  input:focus, select:focus{ outline:2px solid var(--amber); border-color:var(--amber); }
+  .participant-block{ border:1px solid var(--line); border-radius:6px; padding:14px; margin-bottom:14px; background:#0d0e10; }
+  .participant-block h4{ margin:0 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--blue); }
+  .hint{ color:var(--muted); font-size:12px; margin-top:4px; }
+  .error-box{ background:#2a1216; border:1px solid #5c1f27; color:#ffb4bb; padding:10px 12px; border-radius:4px; font-size:13px; margin-bottom:14px; }
+  .ok-box{ background:#0f2418; border:1px solid #1f6b39; color:#8ff0b4; padding:10px 12px; border-radius:4px; font-size:13px; margin-bottom:14px; }
+  .wildcard-row{ display:flex; align-items:center; gap:8px; margin-top:8px; font-size:13px; color:var(--text); flex-wrap:wrap; }
+  .wildcard-row input[type=checkbox]{ width:16px; height:16px; accent-color:var(--red); }
+
+  .std-input{ width:56px !important; text-align:center; padding:6px 4px !important; }
+  .std-table td{ padding:6px 12px; }
+  .std-table th{ padding:8px 12px; }
+
+  footer{ max-width:1080px; margin:60px auto 0; padding:20px 24px; color:var(--muted); font-size:12px; border-top:1px solid var(--line); }
+  a{ color:var(--blue); }
+  .empty-state{ text-align:center; padding:40px 20px; color:var(--muted); font-size:14px; }
+
+  /* ---------- Intro 8-bit ---------- */
+  #introOverlay{
+    position:fixed; inset:0; z-index:9999; background:#000;
+    overflow:hidden; opacity:1; transition:opacity 0.7s ease;
+  }
+  #introOverlay.fade-out{ opacity:0; pointer-events:none; }
+  #introCanvas{
+    width:100%; height:100%; display:block;
+    image-rendering:pixelated; image-rendering:crisp-edges;
+  }
+  #introScanlines{
+    position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0px, rgba(0,0,0,0.22) 1px, transparent 2px, transparent 3px);
+    mix-blend-mode:multiply; opacity:0.55;
+  }
+  #introSkip{
+    position:absolute; bottom:22px; right:22px;
+    font-family:'Oswald',sans-serif; font-size:12px; letter-spacing:0.05em; text-transform:uppercase;
+    color:#c7ccd2; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2);
+    padding:8px 14px; border-radius:3px; cursor:pointer; z-index:2;
+  }
+  #introSkip:hover{ background:rgba(255,255,255,0.16); color:#fff; }
+</style>
+</head>
+<body>
+
+<div id="introOverlay">
+  <canvas id="introCanvas"></canvas>
+  <div id="introScanlines"></div>
+  <div id="introSkip">Saltar intro →</div>
+</div>
+
+<div class="ticker-wrap">
+  <div class="ticker-tag">EN VIVO</div>
+  <div class="ticker-track" id="tickerTrack">Cargá los puntos de la tabla para empezar…</div>
+</div>
+
+<header class="hero">
+  <div class="flag-wrap">
+    <div class="flag-jp"><span></span></div>
+    <div class="eyebrow">26/27 J LEAGUE</div>
+  </div>
+  <h1 class="title">HAMILTON <span>LEAGUE</span></h1>
+  <p class="subtitle">Cada participante eligió 2 clubes de la J1 League de Japón. Sus puntos reales se suman fecha a fecha — y cada uno tiene dos jornadas comodín para duplicarlos.</p>
+  <div class="hero-actions">
+    <button class="btn primary" id="btnLogin">Elegí tu equipo</button>
+    <button class="btn" id="btnSetup">Configurar / actualizar tabla</button>
+    <button class="btn small" id="btnSync" title="Traer los últimos datos guardados">🔄 Sincronizar</button>
+    <span class="status-pill" id="statusPill"><span class="status-dot off" id="statusDot"></span><span id="statusText">Sin configurar</span></span>
+  </div>
+</header>
+
+<main>
+
+  <!-- CLOUD SETUP BANNER (solo se muestra si no hay almacenamiento compartido configurado) -->
+  <div class="card" id="cloudBanner" style="display:none; margin-bottom:24px; border-color:#6b4f1f;">
+    <h4 style="margin:0 0 8px 0; font-family:'Oswald',sans-serif; font-size:14px; letter-spacing:0.04em; text-transform:uppercase; color:var(--amber);">⚠ Conectá almacenamiento compartido</h4>
+    <p class="hint" style="margin-bottom:14px; font-size:13px;">
+      Ahora mismo lo que carga cada uno se guarda solo en su propio navegador. Para que los 3 vean las mismas tablas
+      desde donde estén, hace falta esto (una sola vez, gratis, ~2 minutos):
+    </p>
+    <ol style="color:var(--muted); font-size:13px; line-height:1.8; padding-left:20px; margin:0 0 14px 0;">
+      <li>Entrá a <a href="https://jsonbin.io/create-account" target="_blank" rel="noopener">jsonbin.io</a> y creá una cuenta gratis (sin tarjeta).</li>
+      <li>Andá a <a href="https://jsonbin.io/app/api-keys" target="_blank" rel="noopener">API Keys</a> dentro de tu cuenta y copiá tu <b>X-Master-Key</b>.</li>
+      <li>Pegala acá abajo y tocá el botón — te va a descargar un archivo <code>index.html</code> nuevo, ya conectado.</li>
+      <li>Subí ese archivo nuevo a GitHub Pages / Netlify (reemplazando el anterior) y compartí ese link con Roberto y Nicolas.</li>
+    </ol>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <input type="password" id="cloudApiKeyInput" placeholder="Pegá acá tu X-Master-Key" style="max-width:320px;">
+      <button class="btn primary" id="btnCreateCloud" type="button">Crear y descargar mi archivo compartido</button>
+    </div>
+    <p class="hint" id="cloudStatus" style="margin-top:10px;"></p>
+  </div>
+
+  <!-- LOGIN -->
+  <section class="section" id="loginSection" style="display:none;">
+    <div class="section-head">
+      <div><span class="section-num">👤</span><span class="section-title">Elegí tu equipo</span></div>
+      <div class="section-sub" id="loginStepLabel">Paso 1 de 3</div>
+    </div>
+    <div class="card">
+
+      <div id="loginStep1">
+        <p class="hint" style="margin-bottom:14px; font-size:14px;">¿Quién sos?</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn primary" data-login-name="Alvaro" type="button">Alvaro</button>
+          <button class="btn primary" data-login-name="Roberto" type="button">Roberto</button>
+          <button class="btn primary" data-login-name="Nicolas" type="button">Nicolas</button>
+        </div>
+      </div>
+
+      <div id="loginStep2" style="display:none;">
+        <p class="hint" style="margin-bottom:14px; font-size:14px;">Hola <b id="loginNameDisplay2" style="color:var(--amber);"></b> — elegí tu <b>Equipo 1 (libre)</b>:</p>
+        <select id="loginTeamFree"></select>
+        <div style="margin-top:16px; display:flex; gap:10px;">
+          <button class="btn" id="btnLoginBack2" type="button">Atrás</button>
+          <button class="btn primary" id="btnLoginNext2" type="button">Siguiente</button>
+        </div>
+      </div>
+
+      <div id="loginStep3" style="display:none;">
+        <p class="hint" style="margin-bottom:14px; font-size:14px;">Y tu <b>Equipo 2</b> — entre los recién ascendidos:</p>
+        <select id="loginTeamExcluded"></select>
+        <div style="margin-top:16px; display:flex; gap:10px;">
+          <button class="btn" id="btnLoginBack3" type="button">Atrás</button>
+          <button class="btn primary" id="btnLoginConfirm" type="button">Confirmar</button>
+        </div>
+      </div>
+
+      <div id="loginDone" style="display:none;">
+        <p class="ok-box" id="loginDoneMsg"></p>
+        <button class="btn primary" id="btnLoginClose" type="button">Ver tablas</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section class="section" id="setupSection" style="display:none;">
+    <div class="section-head">
+      <div><span class="section-num">00</span><span class="section-title">Configuración</span></div>
+      <div class="section-sub">Se guarda en este navegador</div>
+    </div>
+    <div class="card">
+      <div id="setupError"></div>
+
+      <h4 style="margin:0 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--amber);">1. Participantes y sus 2 equipos</h4>
+      <div id="participantsWrap"></div>
+
+      <h4 style="margin:24px 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--amber);">2. Tabla actual de la J1</h4>
+      <p class="hint" style="margin-bottom:10px;">Traela automática desde Wikipedia (gratis, sin API key), o cargá los números a mano copiándolos de <a href="https://www.jleague.jp/en/j1/standings/" target="_blank" rel="noopener">jleague.jp</a>.</p>
+      <button class="btn" id="btnFetchWiki" type="button">Traer tabla desde Wikipedia</button>
+      <span id="wikiStatus" class="hint" style="margin-left:10px;"></span>
+      <div class="board">
+        <table class="std-table">
+          <thead><tr><th>Equipo</th><th class="num">PJ</th><th class="num">G</th><th class="num">E</th><th class="num">P</th><th class="num">Pts</th></tr></thead>
+          <tbody id="standingsInputs"></tbody>
+        </table>
+      </div>
+      <p class="hint" style="margin-top:14px;">Los comodines no se configuran acá — cada participante los puede agregar cuando quiera, desde el panel principal.</p>
+
+      <div style="margin-top:18px; display:flex; gap:10px;">
+        <button class="btn primary" id="btnSaveConfig" type="button">Guardar y ver tablas</button>
+        <button class="btn" id="btnCancelSetup" type="button">Cancelar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" style="display:none;">
+    <section class="section">
+      <div class="section-head">
+        <div><span class="section-num">01</span><span class="section-title">Tabla general — J1 League</span></div>
+        <div class="section-sub" id="j1UpdatedAt"></div>
+      </div>
+      <div class="board"><table id="tableJ1"><thead></thead><tbody></tbody></table></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><span class="section-num">02</span><span class="section-title">Managers</span></div>
+        <div class="section-sub">Puntos de sus 2 equipos + bonus/penalización comodín</div>
+      </div>
+      <div class="board"><table id="tableUsers"><thead></thead><tbody></tbody></table></div>
+
+      <div class="card" style="margin-top:16px;">
+        <h4 style="margin:0 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted);">Comodines</h4>
+        <p class="hint" style="margin-bottom:14px;">Cada participante puede usar su comodín en cualquier fecha del torneo, cuando quiera — hasta 2 veces en total. Duplica los puntos que sumaron <b>ambos</b> equipos ese día. Ojo: si esa fecha sumaron 2 puntos o menos entre los dos, la fecha siguiente solo suman la mitad de los puntos reales.</p>
+        <div id="wildcardPanel"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><span class="section-num">03</span><span class="section-title">Hamilton League</span></div>
+        <div class="section-sub">Los 6 equipos, ordenados por puntos reales en la J1</div>
+      </div>
+      <div class="board"><table id="tableTeams"><thead></thead><tbody></tbody></table></div>
+    </section>
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    Todavía no configuraste el torneo. Tocá <b>«Configurar / actualizar tabla»</b> para cargar los participantes, sus equipos y los puntos actuales de la J1.
+  </div>
+
+</main>
+
+<footer>
+  Hamilton League · Tabla desde Wikipedia (2026–27 J1 League) con carga manual de respaldo. Hecho para hostear gratis en GitHub Pages / Netlify.
+</footer>
+
+<script>
+// ================= INTRO 8-BIT: patada, gol, la red se prende fuego, bandera de Japón =================
+(function(){
+  "use strict";
+  const overlay = document.getElementById("introOverlay");
+  const skipBtn = document.getElementById("introSkip");
+  let finished = false;
+
+  function endIntro(){
+    if(finished) return;
+    finished = true;
+    overlay.classList.add("fade-out");
+    setTimeout(()=>{ overlay.style.display = "none"; }, 750);
+  }
+  skipBtn.addEventListener("click", endIntro);
+  setTimeout(endIntro, 12000); // seguro: nunca bloquea la página más de 12s
+
+  try{
+    const canvas = document.getElementById("introCanvas");
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+
+    // resolución interna algo más alta para más detalle, sigue siendo "pixelated" al escalar
+    const W = 384, H = 216;
+    canvas.width = W; canvas.height = H;
+
+    const PAL = {
+      night:"#050914", night2:"#0a1224", horizon:"#12244a",
+      white:"#ffffff", black:"#0a0a0a", red:"#e0000f",
+      steel:"#2b3350", steel2:"#3a4470", steel3:"#1a2038",
+      light:"#ffe98a", lightWarm:"#ffcf5c", grey:"#8a90a6",
+      flag1:"#e0000f", flag2:"#3fd16b", flag3:"#4c8dff", flag4:"#ffe000", flag5:"#ffffff",
+      skin:"#e0a56f", green:"#173a24"
+    };
+
+    function rect(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h)); }
+    function clear(c){ rect(0,0,W,H,c); }
+    function circle(cx,cy,r,c){
+      ctx.fillStyle = c;
+      for(let y=-r;y<=r;y++){
+        const w = Math.floor(Math.sqrt(Math.max(0,r*r - y*y)));
+        ctx.fillRect(Math.round(cx-w), Math.round(cy+y), Math.round(w*2), 1);
+      }
+    }
+    function pixText(str, x, y, size, color, align){
+      ctx.font = `${size}px 'Press Start 2P', monospace`;
+      ctx.fillStyle = color;
+      ctx.textAlign = align || "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(str, Math.round(x), Math.round(y));
+    }
+    function ease(t){ return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+
+    // estrellas fijas (precalculadas una sola vez)
+    const STARS = [];
+    for(let i=0;i<70;i++){
+      STARS.push({x:Math.random()*W, y:Math.random()*H*0.45, tw: Math.random()*6});
+    }
+
+    // ---------------- ESCENA: estadio, tribunas y cancha (inspirado en referencia) ----------------
+    // textura de "multitud" hecha con puntitos de color, no figuras individuales
+    function buildCrowdDots(x0, y0, w, h, density){
+      const dots = [];
+      const n = Math.floor(w*h*density);
+      const weighted = ["#c0392b","#e05a3a","#e07b3a","#8a90a6","#c0392b","#e05a3a","#4c6a8a","#c0392b"];
+      for(let i=0;i<n;i++){
+        dots.push({
+          x: x0 + Math.random()*w,
+          y: y0 + Math.random()*h,
+          c: weighted[Math.floor(Math.random()*weighted.length)],
+          ph: Math.random()*Math.PI*2
+        });
+      }
+      return dots;
+    }
+
+    const BACK_STAND   = buildCrowdDots(40, 46, W-80, 30, 0.55);
+    const LEFT_STAND   = buildCrowdDots(0, 60, 96, 92, 0.5);
+    const RIGHT_STAND  = buildCrowdDots(W-96, 60, 96, 92, 0.5);
+
+    function drawCrowdDots(dots, el){
+      dots.forEach(d=>{
+        const flicker = 0.75 + 0.25*Math.sin(el*0.006 + d.ph);
+        ctx.globalAlpha = flicker;
+        rect(d.x, d.y, 2, 2, d.c);
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    function drawStadiumBowl(el, drift){
+      // cielo con degradé (varias franjas horizontales)
+      rect(0,0,W,H*0.12, "#0d3a52");
+      rect(0,H*0.12,W,H*0.10, "#155873");
+      rect(0,H*0.22,W,H*0.10, "#2c7f86");
+      rect(0,H*0.32,W,H*0.08, "#6fb79a");
+      rect(0,H*0.40,W,H*0.06, "#bfe0c2");
+      // nubes finitas
+      [ [30,18,26],[130,30,34],[260,14,30],[330,34,20] ].forEach(([x,y,w],i)=>{
+        rect(x+Math.sin(el*0.00015+i)*4, y, w, 2, "rgba(255,255,255,0.35)");
+      });
+
+      // -------- fondo (stand detrás del arco) --------
+      const backY = H*0.24, backH = 30;
+      rect(30, backY+backH, W-60, 10, "#1a2038"); // sombra bajo el marcador
+      rect(30, backY, W-60, backH, "#12182e");
+      drawCrowdDots(BACK_STAND, el);
+      // marcador central
+      const sbW=70, sbH=22, sbX=W/2-sbW/2, sbY=backY-sbH-2;
+      rect(sbX-3, sbY-3, sbW+6, sbH+6, "#0a0e1c");
+      rect(sbX, sbY, sbW, sbH, "#132038");
+      rect(sbX+3, sbY+3, sbW-6, 8, "#1c6fc9");
+      pixText("HAMILTON", sbX+sbW/2, sbY+7, 3, "#ffffff", "center");
+      rect(sbX+5, sbY+13, 10, 5, "#e0e0e0");
+      rect(sbX+18, sbY+13, 10, 5, "#ffd400");
+      rect(sbX+31, sbY+13, 10, 5, "#3fd16b");
+      rect(sbX+44, sbY+13, 10, 5, "#e0000f");
+
+      // -------- torres de iluminación (estructura de celosía) --------
+      [46, W-46].forEach(tx=>{
+        const topY = H*0.05, botY = backY+backH;
+        rect(tx-2, topY+18, 4, botY-(topY+18), "#1a2038");
+        for(let y=topY+18; y<botY-6; y+=8){
+          rect(tx-9, y, 18, 1, "#3a4470");
+          rect(tx-9, y, 1, 8, "#3a4470");
+          rect(tx+8, y, 1, 8, "#3a4470");
+        }
+        // panel de luces arriba
+        rect(tx-13, topY, 26, 16, "#0f1424");
+        for(let r=0;r<3;r++) for(let c=0;c<4;c++){
+          rect(tx-11+c*6, topY+2+r*4.5, 4,3, PAL.light);
+        }
+        ctx.save();
+        ctx.globalAlpha = 0.09;
+        ctx.fillStyle = PAL.light;
+        ctx.beginPath();
+        ctx.moveTo(tx, topY+16);
+        ctx.lineTo(tx-70, backY+backH+40);
+        ctx.lineTo(tx+70, backY+backH+40);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // -------- tribunas laterales (trapezoides en perspectiva) --------
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(0,60); ctx.lineTo(96,66); ctx.lineTo(70,152); ctx.lineTo(0,152); ctx.closePath();
+      ctx.clip();
+      rect(0,60,100,100,"#12182e");
+      drawCrowdDots(LEFT_STAND, el);
+      // bandera de Japón desplegada tipo "tifo" por la hinchada
+      rect(4, 96, 64, 40, "#f2f2f2");
+      rect(4, 96, 64, 2, "#c9c9c9");
+      rect(4, 134, 64, 2, "#c9c9c9");
+      circle(4+32, 96+20, 11, PAL.red);
+      ctx.restore();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(W,60); ctx.lineTo(W-96,66); ctx.lineTo(W-70,152); ctx.lineTo(W,152); ctx.closePath();
+      ctx.clip();
+      rect(W-100,60,100,100,"#12182e");
+      drawCrowdDots(RIGHT_STAND, el);
+      ctx.restore();
+
+      // rieles/estructura oscura entre tribuna y cancha
+      rect(0, 150, W, 8, "#0a0e1c");
+
+      // -------- cancha (100% fútbol) --------
+      const fieldY = 158;
+      rect(0, fieldY, W, H-fieldY, "#1f7a3d");
+      for(let x=0;x<W;x+=18){ rect(x, fieldY, 18, H-fieldY, (x/18)%2===0?"#1f7a3d":"#227f41"); }
+      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.lineWidth = 1;
+      // líneas de banda (laterales) convergiendo hacia la línea de fondo
+      ctx.beginPath(); ctx.moveTo(24,H); ctx.lineTo(66,fieldY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W-24,H); ctx.lineTo(W-66,fieldY); ctx.stroke();
+      // línea de fondo (donde está el arco)
+      ctx.beginPath(); ctx.moveTo(66,fieldY); ctx.lineTo(W-66,fieldY); ctx.stroke();
+      // área grande
+      const boxW=150, boxH=36, boxX=W/2-boxW/2, boxY=fieldY;
+      ctx.strokeRect(boxX, boxY, boxW, boxH);
+      // área chica
+      const gboxW=66, gboxH=15, gboxX=W/2-gboxW/2;
+      ctx.strokeRect(gboxX, boxY, gboxW, gboxH);
+      // punto penal
+      rect(W/2-1, boxY+24, 2,2, "#ffffff");
+      // luna del área (arco de círculo penal)
+      ctx.beginPath();
+      ctx.arc(W/2, boxY+24, 20, Math.PI*0.22, Math.PI*0.78);
+      ctx.stroke();
+      // arco (goal)
+      const gW=30, gH=16, gX=W/2-gW/2, gY=fieldY-gH;
+      rect(gX,gY,2,gH,"#f2f2f2"); rect(gX+gW-2,gY,2,gH,"#f2f2f2"); rect(gX,gY,gW,2,"#f2f2f2");
+      for(let i=0;i<=6;i++) rect(gX+2+i*(gW-4)/6, gY, 1, gH, "rgba(255,255,255,0.5)");
+      for(let j=0;j<=4;j++) rect(gX, gY+2+j*(gH-2)/4, gW, 1, "rgba(255,255,255,0.5)");
+
+      // -------- siluetas oscuras en primer plano (barandas / cabezas cercanas) --------
+      rect(0, H-14, W, 14, "#05070f");
+      for(let x=0;x<W;x+=22){
+        rect(x+drift, H-18, 14, 10, "#05070f");
+      }
+    }
+
+    // ---------------- fases ----------------
+    const P_STADIUM = 5000, P_FADE = 650, P_TITLE = 2000;
+    const T_STADIUM = P_STADIUM;
+    const T_FADE = T_STADIUM + P_FADE;
+    const T_TITLE = T_FADE + P_TITLE;
+
+    const t0 = performance.now();
+
+    function frame(now){
+      if(finished) return;
+      const el = now - t0;
+
+      if(el < T_STADIUM){
+        drawStadiumBowl(el, Math.sin(el*0.0004)*3);
+
+      } else if(el < T_FADE){
+        drawStadiumBowl(el, Math.sin(el*0.0004)*3);
+        const t = ease((el-T_STADIUM)/P_FADE);
+        rect(0,0,W,H, `rgba(0,0,0,${t})`);
+
+      } else if(el < T_TITLE){
+        const t = (el-T_FADE)/P_TITLE;
+        clear(PAL.black);
+        const s = Math.min(1, 0.4 + (t/0.2));
+        ctx.save();
+        ctx.translate(W/2, H/2-14);
+        ctx.scale(Math.min(1,s), Math.min(1,s));
+        pixText("HAMILTON", 0, -6, 15, PAL.white, "center");
+        pixText("LEAGUE", 0, 14, 15, "#3fd16b", "center");
+        ctx.restore();
+        if(t>0.55){
+          pixText("26-27 · J LEAGUE", W/2, H/2+30, 8, PAL.grey, "center");
+        }
+      } else {
+        endIntro();
+      }
+
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+  }catch(err){
+    console.error("Intro animation error:", err);
+    endIntro();
+  }
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+
+  const LS_KEY = "hamiltonLeagueConfig";
+
+  // ======= ALMACENAMIENTO COMPARTIDO (JSONBin.io) =======
+  // Estos dos valores quedan vacíos hasta que uses el botón "Crear
+  // almacenamiento compartido" (aparece arriba cuando faltan). Una vez
+  // creado, se completan solos en el archivo que descargues — no hace
+  // falta tocar código a mano.
+  const JSONBIN_API_KEY = "";
+  const JSONBIN_BIN_ID = "";
+  const SHARED_STORAGE_ENABLED = !!(JSONBIN_API_KEY && JSONBIN_BIN_ID);
+
+  const TEAMS = [
+    "Avispa Fukuoka","Cerezo Osaka","Fagiano Okayama","FC Tokyo","Gamba Osaka",
+    "JEF United Chiba","Kashima Antlers","Kashiwa Reysol","Kawasaki Frontale",
+    "Kyoto Sanga","Machida Zelvia","Mito HollyHock","Nagoya Grampus",
+    "Sanfrecce Hiroshima","Shimizu S-Pulse","Tokyo Verdy","Urawa Red Diamonds",
+    "V-Varen Nagasaki","Vissel Kobe","Yokohama F Marinos"
+  ];
+
+  const PARTICIPANT_NAMES = ["Alvaro","Roberto","Nicolas"];
+  const EXCLUDED_TEAMS = ["JEF United Chiba","Mito HollyHock","V-Varen Nagasaki"];
+  const FREE_TEAMS = TEAMS.filter(t=>!EXCLUDED_TEAMS.includes(t));
+
+  let config = null;
+
+  async function loadConfig(){
+    if(SHARED_STORAGE_ENABLED){
+      try{
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+          headers: { "X-Master-Key": JSONBIN_API_KEY }
+        });
+        if(!res.ok) throw new Error("cloud read failed: " + res.status);
+        const data = await res.json();
+        localStorage.setItem(LS_KEY, JSON.stringify(data.record)); // cache local por si falla internet después
+        return data.record;
+      }catch(e){
+        console.error("No se pudo leer el almacenamiento compartido, uso la copia local:", e);
+        try{ return JSON.parse(localStorage.getItem(LS_KEY)); }catch(_){ return null; }
+      }
+    }
+    try{ return JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){ return null; }
+  }
+
+  async function saveConfig(cfg){
+    localStorage.setItem(LS_KEY, JSON.stringify(cfg));
+    if(SHARED_STORAGE_ENABLED){
+      try{
+        await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "X-Master-Key": JSONBIN_API_KEY },
+          body: JSON.stringify(cfg)
+        });
+      }catch(e){
+        console.error("No se pudo sincronizar con el almacenamiento compartido:", e);
+      }
+    }
+  }
+
+  function defaultConfig(){
+    return {
+      participants: [
+        {name:"", teams:["",""]},
+        {name:"", teams:["",""]},
+        {name:"", teams:["",""]},
+      ],
+      standings: {}, // teamName -> {played,win,draw,lose,pts}
+      wildcards: [[],[],[]], // per participant idx: array of up to 2 {label, teamAPts, teamBPts, penalty:null|{realPoints}}
+    };
+  }
+
+  const els = {
+    setupSection: document.getElementById("setupSection"),
+    dashboard: document.getElementById("dashboard"),
+    emptyState: document.getElementById("emptyState"),
+    btnSetup: document.getElementById("btnSetup"),
+    btnCancelSetup: document.getElementById("btnCancelSetup"),
+    btnSaveConfig: document.getElementById("btnSaveConfig"),
+    participantsWrap: document.getElementById("participantsWrap"),
+    standingsInputs: document.getElementById("standingsInputs"),
+    btnFetchWiki: document.getElementById("btnFetchWiki"),
+    wikiStatus: document.getElementById("wikiStatus"),
+    setupError: document.getElementById("setupError"),
+    statusDot: document.getElementById("statusDot"),
+    statusText: document.getElementById("statusText"),
+    tickerTrack: document.getElementById("tickerTrack"),
+    wildcardPanel: document.getElementById("wildcardPanel"),
+    j1UpdatedAt: document.getElementById("j1UpdatedAt"),
+  };
+
+  function teamOptions(selected, list){
+    let opts = `<option value="">— elegir —</option>`;
+    list.forEach(t=>{
+      opts += `<option value="${t}" ${t===selected?"selected":""}>${t}</option>`;
+    });
+    return opts;
+  }
+
+  function renderParticipantForm(){
+    const names = ["Participante 1","Participante 2","Participante 3"];
+    let html = "";
+    for(let i=0;i<3;i++){
+      const p = config.participants[i];
+      html += `<div class="participant-block">
+        <h4>${names[i]}</h4>
+        <div class="field-row cols-3">
+          <div><label>Nombre</label><input type="text" class="p-name" data-idx="${i}" value="${p.name||""}" placeholder="Ej: Alvaro"></div>
+          <div><label>Equipo 1 (libre)</label><select class="p-team" data-idx="${i}" data-slot="0">${teamOptions(p.teams[0], FREE_TEAMS)}</select></div>
+          <div><label>Equipo 2 (ascendidos)</label><select class="p-team" data-idx="${i}" data-slot="1">${teamOptions(p.teams[1], EXCLUDED_TEAMS)}</select></div>
+        </div>
+      </div>`;
+    }
+    els.participantsWrap.innerHTML = html;
+  }
+
+  function renderStandingsInputs(){
+    let rows = "";
+    TEAMS.forEach(team=>{
+      const s = config.standings[team] || {played:"",win:"",draw:"",lose:"",pts:""};
+      rows += `<tr>
+        <td class="team-name">${team}</td>
+        <td class="num"><input type="number" min="0" class="std-input st-field" data-team="${team}" data-field="played" value="${s.played}"></td>
+        <td class="num"><input type="number" min="0" class="std-input st-field" data-team="${team}" data-field="win" value="${s.win}"></td>
+        <td class="num"><input type="number" min="0" class="std-input st-field" data-team="${team}" data-field="draw" value="${s.draw}"></td>
+        <td class="num"><input type="number" min="0" class="std-input st-field" data-team="${team}" data-field="lose" value="${s.lose}"></td>
+        <td class="num"><input type="number" min="0" class="std-input st-field" data-team="${team}" data-field="pts" value="${s.pts}" style="color:var(--amber); font-weight:700;"></td>
+      </tr>`;
+    });
+    els.standingsInputs.innerHTML = rows;
+  }
+
+  function chosenTeams(){
+    const set = new Set();
+    config.participants.forEach(p=> p.teams.forEach(t=>{ if(t) set.add(t); }));
+    return Array.from(set);
+  }
+
+  function normalizeName(s){
+    return s.toLowerCase().replace(/[^a-z]/g,"");
+  }
+
+  function matchTeam(rawName){
+    const norm = normalizeName(rawName);
+    let best = null;
+    TEAMS.forEach(t=>{
+      const tn = normalizeName(t);
+      if(norm === tn || norm.includes(tn) || tn.includes(norm)){
+        best = t;
+      }
+    });
+    return best;
+  }
+
+  async function fetchWikipediaStandings(){
+    els.wikiStatus.textContent = "Buscando la tabla en Wikipedia…";
+    els.btnFetchWiki.disabled = true;
+    try{
+      const pageTitle = "2026\u201327 J1 League";
+      const url = "https://en.wikipedia.org/w/api.php?action=parse&page="
+        + encodeURIComponent(pageTitle) + "&format=json&prop=text&origin=*";
+      const res = await fetch(url);
+      if(!res.ok) throw new Error("No se pudo conectar con Wikipedia (" + res.status + ")");
+      const data = await res.json();
+      if(data.error) throw new Error(data.error.info || "Wikipedia no encontró esa página todavía.");
+      const html = data.parse.text["*"];
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const tables = Array.from(doc.querySelectorAll("table"));
+      let standingsTable = null;
+      let headerMap = null;
+      for(const table of tables){
+        const headerRow = table.querySelector("tr");
+        if(!headerRow) continue;
+        const headers = Array.from(headerRow.querySelectorAll("th")).map(th=>th.textContent.trim());
+        if(headers.some(h=>/^Pts$/i.test(h)) && headers.some(h=>/^(Team|Club)$/i.test(h))){
+          const map = {};
+          headers.forEach((h,i)=>{
+            if(/^Pos$/i.test(h)) map.pos=i;
+            else if(/^(Team|Club)$/i.test(h)) map.team=i;
+            else if(/^Pld$/i.test(h)) map.played=i;
+            else if(/^W$/i.test(h)) map.win=i;
+            else if(/^D$/i.test(h)) map.draw=i;
+            else if(/^L$/i.test(h)) map.lose=i;
+            else if(/^Pts$/i.test(h)) map.pts=i;
+          });
+          if(map.team!==undefined && map.pts!==undefined){
+            standingsTable = table; headerMap = map; break;
+          }
+        }
+      }
+      if(!standingsTable) throw new Error("No encontré la tabla de posiciones en esa página.");
+
+      const rows = Array.from(standingsTable.querySelectorAll("tr")).slice(1);
+      const newStandings = {};
+      let matched = 0;
+      rows.forEach(row=>{
+        const cells = Array.from(row.children); // th/td mixed, in order
+        if(cells.length < 3) return;
+        const teamCellRaw = cells[headerMap.team];
+        if(!teamCellRaw) return;
+        const teamName = teamCellRaw.textContent.trim();
+        const team = matchTeam(teamName);
+        if(!team) return;
+        const num = (idx)=> idx!==undefined && cells[idx] ? (parseInt(cells[idx].textContent.trim(),10) || 0) : 0;
+        newStandings[team] = {
+          played: num(headerMap.played),
+          win: num(headerMap.win),
+          draw: num(headerMap.draw),
+          lose: num(headerMap.lose),
+          pts: num(headerMap.pts),
+        };
+        matched++;
+      });
+      if(matched < 15) throw new Error("Encontré la tabla pero no pude leer bien los equipos (matched: " + matched + "). Cargalos a mano por las dudas.");
+
+      config.standings = {...config.standings, ...newStandings};
+      renderStandingsInputs();
+      els.wikiStatus.textContent = `Listo — se cargaron ${matched} equipos. Revisá los números antes de guardar por si la tabla de Wikipedia está atrasada.`;
+    }catch(err){
+      els.wikiStatus.textContent = "Error: " + err.message;
+    }finally{
+      els.btnFetchWiki.disabled = false;
+    }
+  }
+  els.btnFetchWiki.addEventListener("click", fetchWikipediaStandings);
+
+  function setStatus(ok, text){
+    els.statusDot.classList.toggle("off", !ok);
+    els.statusText.textContent = text;
+  }
+
+  function showSetup(){
+    if(!config) config = defaultConfig();
+    document.getElementById("loginSection").style.display = "none";
+    els.setupSection.style.display = "block";
+    els.dashboard.style.display = "none";
+    els.emptyState.style.display = "none";
+    renderParticipantForm();
+    renderStandingsInputs();
+  }
+  function hideSetup(){ els.setupSection.style.display = "none"; }
+
+  els.btnSetup.addEventListener("click", showSetup);
+  els.btnCancelSetup.addEventListener("click", ()=>{
+    hideSetup();
+    if(config && config.participants.some(p=>p.name)) renderDashboard(); else els.emptyState.style.display="block";
+  });
+
+  // ---------- login wizard ----------
+  let loginState = {name:null, teamFree:null, teamExcluded:null};
+
+  function goToLoginStep(step){
+    document.getElementById("loginStep1").style.display = step===1?"block":"none";
+    document.getElementById("loginStep2").style.display = step===2?"block":"none";
+    document.getElementById("loginStep3").style.display = step===3?"block":"none";
+    document.getElementById("loginDone").style.display = step===4?"block":"none";
+    document.getElementById("loginStepLabel").textContent = step<=3 ? `Paso ${step} de 3` : "¡Listo!";
+  }
+
+  function showLogin(){
+    hideSetup();
+    els.dashboard.style.display = "none";
+    els.emptyState.style.display = "none";
+    loginState = {name:null, teamFree:null, teamExcluded:null};
+    document.getElementById("loginSection").style.display = "block";
+    goToLoginStep(1);
+  }
+  document.getElementById("btnLogin").addEventListener("click", showLogin);
+
+  document.querySelectorAll("[data-login-name]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      loginState.name = btn.dataset.loginName;
+      document.getElementById("loginNameDisplay2").textContent = loginState.name;
+      const sel = document.getElementById("loginTeamFree");
+      sel.innerHTML = FREE_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join("");
+      goToLoginStep(2);
+    });
+  });
+  document.getElementById("btnLoginBack2").addEventListener("click", ()=> goToLoginStep(1));
+  document.getElementById("btnLoginNext2").addEventListener("click", ()=>{
+    loginState.teamFree = document.getElementById("loginTeamFree").value;
+    const sel = document.getElementById("loginTeamExcluded");
+    sel.innerHTML = EXCLUDED_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join("");
+    goToLoginStep(3);
+  });
+  document.getElementById("btnLoginBack3").addEventListener("click", ()=> goToLoginStep(2));
+  document.getElementById("btnLoginConfirm").addEventListener("click", ()=>{
+    loginState.teamExcluded = document.getElementById("loginTeamExcluded").value;
+    if(!config) config = defaultConfig();
+    const idx = PARTICIPANT_NAMES.indexOf(loginState.name);
+    config.participants[idx] = {name: loginState.name, teams: [loginState.teamFree, loginState.teamExcluded]};
+    saveConfig(config);
+    document.getElementById("loginDoneMsg").textContent =
+      `${loginState.name} va con ${loginState.teamFree} + ${loginState.teamExcluded}.`;
+    goToLoginStep(4);
+  });
+  document.getElementById("btnLoginClose").addEventListener("click", ()=>{
+    document.getElementById("loginSection").style.display = "none";
+    if(config.participants.some(p=>p.name)) renderDashboard(); else els.emptyState.style.display = "block";
+  });
+
+  els.btnSaveConfig.addEventListener("click", ()=>{
+    els.setupError.innerHTML = "";
+    const participants = [];
+    for(let i=0;i<3;i++){
+      const nameInput = document.querySelector(`.p-name[data-idx="${i}"]`);
+      const slot0 = document.querySelector(`.p-team[data-idx="${i}"][data-slot="0"]`);
+      const slot1 = document.querySelector(`.p-team[data-idx="${i}"][data-slot="1"]`);
+      const name = nameInput.value.trim() || `Participante ${i+1}`;
+      const t0 = slot0.value, t1 = slot1.value;
+      if(!t0 || !t1){
+        els.setupError.innerHTML = `<div class="error-box">Elegí los 2 equipos de ${name}.</div>`;
+        return;
+      }
+      participants.push({name, teams:[t0,t1]});
+    }
+    const standings = {};
+    document.querySelectorAll(".st-field").forEach(inp=>{
+      const team = inp.dataset.team, field = inp.dataset.field;
+      standings[team] = standings[team] || {played:0,win:0,draw:0,lose:0,pts:0};
+      standings[team][field] = Number(inp.value) || 0;
+    });
+
+    config = {
+      participants,
+      standings,
+      wildcards: config.wildcards || [[],[],[]],
+    };
+    saveConfig(config);
+    hideSetup();
+    renderDashboard();
+  });
+
+  function renderDashboard(){
+    document.getElementById("loginSection").style.display = "none";
+    els.emptyState.style.display = "none";
+    els.dashboard.style.display = "block";
+    renderJ1Table();
+    renderAll();
+    els.j1UpdatedAt.textContent = "Cargado " + new Date().toLocaleString("es-AR");
+    setStatus(true, "Torneo configurado");
+    updateTicker();
+  }
+
+  function renderAll(){
+    const userResults = computeUserResults();
+    renderUserTable(userResults);
+    renderTeamsTable(userResults);
+    renderWildcardPanel();
+  }
+
+  function renderJ1Table(){
+    const rows = TEAMS.map(team=>({team, ...(config.standings[team]||{played:0,win:0,draw:0,lose:0,pts:0})}))
+                       .sort((a,b)=> b.pts - a.pts);
+    const thead = `<tr><th class="num">#</th><th>Equipo</th><th class="num">PJ</th><th class="num">G</th><th class="num">E</th><th class="num">P</th><th class="num">Pts</th></tr>`;
+    let body = "";
+    rows.forEach((r,i)=>{
+      body += `<tr class="${i<3?'top3':''}">
+        <td class="num"><span class="rank">${i+1}</span></td>
+        <td class="team-name">${r.team}</td>
+        <td class="num">${r.played}</td>
+        <td class="num">${r.win}</td>
+        <td class="num">${r.draw}</td>
+        <td class="num">${r.lose}</td>
+        <td class="pts">${r.pts}</td>
+      </tr>`;
+    });
+    document.querySelector("#tableJ1 thead").innerHTML = thead;
+    document.querySelector("#tableJ1 tbody").innerHTML = body;
+  }
+
+  function computeUserResults(){
+    const results = config.participants.map((p, idx)=>{
+      let base = 0;
+      p.teams.forEach(team=>{ base += (config.standings[team]?.pts) || 0; });
+      const entries = config.wildcards[idx] || [];
+      let bonus = 0, penaltyTotal = 0;
+      const notes = [];
+      entries.forEach(e=>{
+        const combo = (e.teamAPts||0) + (e.teamBPts||0);
+        bonus += combo;
+        notes.push(`${p.teams[0]} +${e.teamAPts||0} / ${p.teams[1]} +${e.teamBPts||0}${e.label?` (${e.label})`:""}`);
+        if(e.penalty){
+          const sub = (e.penalty.realPoints||0) / 2;
+          penaltyTotal += sub;
+          notes.push(`Penalización: fecha siguiente sumó ${e.penalty.realPoints} → contás ${e.penalty.realPoints/2}`);
+        }
+      });
+      return {idx, name:p.name, teams:p.teams, base, bonus, penalty:penaltyTotal, total: base+bonus-penaltyTotal, notes};
+    });
+    results.sort((a,b)=> b.total - a.total);
+    return results;
+  }
+
+  function renderTeamsTable(userResults){
+    const ownerOf = {};
+    config.participants.forEach(p=> p.teams.forEach(t=>{
+      ownerOf[t] = ownerOf[t] ? ownerOf[t] + " / " + p.name : p.name;
+    }));
+    const topName = userResults[0]?.name;
+    const bottomName = userResults[userResults.length-1]?.name;
+    const teams = chosenTeams();
+    const rows = teams.map(team=>({team, ...(config.standings[team]||{played:0,pts:0})}))
+                       .sort((a,b)=> (b.pts||0) - (a.pts||0));
+    const thead = `<tr><th class="num">#</th><th>Equipo</th><th>Representa a</th><th class="num">PJ</th><th class="num">Pts</th></tr>`;
+    let body = "";
+    rows.forEach((r,i)=>{
+      const owner = ownerOf[r.team]||"—";
+      let ownerBadge = "";
+      if(owner===topName) ownerBadge = `<span class="badge-trophy">🏆</span>`;
+      else if(owner===bottomName) ownerBadge = `<span class="badge-rainbow">🌈</span>`;
+      body += `<tr class="${i<3?'top3':''}">
+        <td class="num"><span class="rank">${i+1}</span></td>
+        <td class="team-name">${r.team}</td>
+        <td class="muted-inline">${owner}${ownerBadge}</td>
+        <td class="num">${r.played||0}</td>
+        <td class="pts">${r.pts||0}</td>
+      </tr>`;
+    });
+    document.querySelector("#tableTeams thead").innerHTML = thead;
+    document.querySelector("#tableTeams tbody").innerHTML = body;
+  }
+
+  function renderWildcardPanel(){
+    let html = "";
+    config.participants.forEach((p, idx)=>{
+      if(!config.wildcards[idx]) config.wildcards[idx] = [];
+      const entries = config.wildcards[idx];
+      html += `<div class="participant-block" style="background:var(--panel-2);">
+        <h4>${p.name} <span class="muted-inline" style="text-transform:none; letter-spacing:0; color:var(--muted);">(${entries.length}/2 usados)</span></h4>`;
+      entries.forEach((e, eIdx)=>{
+        const combo = (e.teamAPts||0) + (e.teamBPts||0);
+        html += `<div class="wildcard-row" style="justify-content:space-between; align-items:flex-start;">
+          <span>🃏 ${p.teams[0]} +${e.teamAPts||0} · ${p.teams[1]} +${e.teamBPts||0} = ${combo} pts (duplicado)${e.label?` · <span class="muted-inline">${e.label}</span>`:""}</span>
+          <button class="btn small" data-remove-idx="${idx}" data-remove-e="${eIdx}" type="button">Quitar</button>
+        </div>`;
+        if(combo <= 2){
+          if(e.penalty){
+            html += `<div class="penalty-applied">Penalización aplicada: la fecha siguiente sumaron ${e.penalty.realPoints} pts reales → contás solo ${e.penalty.realPoints/2}.</div>`;
+          } else {
+            html += `<div class="penalty-warn">
+              ⚠ Ese día sumaron ${combo} pts entre los dos — la <b>fecha siguiente</b> solo cuenta la mitad de los puntos reales.
+              Cuando la sepas, cargala acá:
+              <div style="display:flex; gap:8px; margin-top:8px; align-items:center; flex-wrap:wrap;">
+                <input type="number" min="0" class="pen-input" data-idx="${idx}" data-e="${eIdx}" style="width:90px;" placeholder="Pts reales">
+                <button class="btn small" data-pen-idx="${idx}" data-pen-e="${eIdx}" type="button">Aplicar penalización</button>
+              </div>
+            </div>`;
+          }
+        }
+      });
+      if(entries.length < 2){
+        html += `<div class="field-row cols-3" style="margin-top:10px; margin-bottom:0;">
+          <div><label>${p.teams[0]||"Equipo 1"} — pts esa fecha</label>
+            <select class="wc-add-a" data-idx="${idx}">
+              <option value="3">3 (ganó)</option>
+              <option value="1">1 (empató)</option>
+              <option value="0">0 (perdió)</option>
+            </select>
+          </div>
+          <div><label>${p.teams[1]||"Equipo 2"} — pts esa fecha</label>
+            <select class="wc-add-b" data-idx="${idx}">
+              <option value="3">3 (ganó)</option>
+              <option value="1">1 (empató)</option>
+              <option value="0">0 (perdió)</option>
+            </select>
+          </div>
+          <div><label>Fecha / nota (opcional)</label>
+            <input type="text" class="wc-add-label" data-idx="${idx}" placeholder="Ej: Fecha 14"></div>
+        </div>
+        <button class="btn primary small" data-add-idx="${idx}" type="button" style="margin-top:10px;">+ Agregar comodín</button>`;
+      }
+      html += `</div>`;
+    });
+    els.wildcardPanel.innerHTML = html;
+
+    document.querySelectorAll("[data-add-idx]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const idx = +btn.dataset.addIdx;
+        const aSel = document.querySelector(`.wc-add-a[data-idx="${idx}"]`);
+        const bSel = document.querySelector(`.wc-add-b[data-idx="${idx}"]`);
+        const labelInp = document.querySelector(`.wc-add-label[data-idx="${idx}"]`);
+        config.wildcards[idx].push({
+          teamAPts: Number(aSel.value), teamBPts: Number(bSel.value),
+          label: labelInp.value.trim(), penalty: null
+        });
+        if(config.wildcards[idx].length > 2) config.wildcards[idx] = config.wildcards[idx].slice(0,2);
+        saveConfig(config);
+        renderAll();
+      });
+    });
+    document.querySelectorAll("[data-remove-idx]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const idx = +btn.dataset.removeIdx, eIdx = +btn.dataset.removeE;
+        config.wildcards[idx].splice(eIdx,1);
+        saveConfig(config);
+        renderAll();
+      });
+    });
+    document.querySelectorAll("[data-pen-idx]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const idx = +btn.dataset.penIdx, eIdx = +btn.dataset.penE;
+        const inp = document.querySelector(`.pen-input[data-idx="${idx}"][data-e="${eIdx}"]`);
+        const realPoints = Number(inp.value);
+        if(!inp.value || isNaN(realPoints) || realPoints < 0){ inp.focus(); return; }
+        config.wildcards[idx][eIdx].penalty = {realPoints};
+        saveConfig(config);
+        renderAll();
+      });
+    });
+  }
+
+  function renderUserTable(results){
+    const thead = `<tr><th class="num">#</th><th>Participante</th><th>Equipos</th><th class="num">Base</th><th class="num">Comodín</th><th class="num">Total</th></tr>`;
+    let body = "";
+    results.forEach((r,i)=>{
+      const wcBadge = r.bonus>0 ? `<span class="badge-joker">🃏 +${r.bonus}</span>` : "";
+      const posBadge = i===0 ? `<span class="badge-trophy">🏆</span>` : (i===results.length-1 ? `<span class="badge-rainbow">🌈</span>` : "");
+      const net = r.bonus - r.penalty;
+      body += `<tr class="${i<3?'top3':''}">
+        <td class="num"><span class="rank">${i+1}</span></td>
+        <td class="team-name">${r.name}${posBadge}${wcBadge}<span class="owner-tag">${r.notes.join(" · ")}</span></td>
+        <td class="muted-inline">${r.teams.join(" + ")}</td>
+        <td class="num">${r.base}</td>
+        <td class="num">${net!==0 ? (net>0?"+":"")+net : "—"}</td>
+        <td class="pts">${r.total}</td>
+      </tr>`;
+    });
+    document.querySelector("#tableUsers thead").innerHTML = thead;
+    document.querySelector("#tableUsers tbody").innerHTML = body;
+  }
+
+  function updateTicker(){
+    const allRows = TEAMS.map(team=>({team, pts:(config.standings[team]?.pts)||0})).sort((a,b)=>b.pts-a.pts);
+    const leader = allRows[0];
+    const teams = chosenTeams();
+    const ownTop = allRows.filter(r=>teams.includes(r.team))[0];
+    els.tickerTrack.innerHTML = `Puntero de la J1: <b>${leader.team}</b> con ${leader.pts} pts &nbsp;|&nbsp; Mejor ubicado de la Hamilton League: <b>${ownTop ? ownTop.team : "-"}</b> &nbsp;|&nbsp; <b style="color:var(--red);">Ganar es vivir, perder es morir. ¡Esto es el fútbol o muerte!</b> &nbsp;|&nbsp; `;
+  }
+
+  // ---------- almacenamiento compartido: banner + creación ----------
+  function setupCloudBanner(){
+    const banner = document.getElementById("cloudBanner");
+    if(SHARED_STORAGE_ENABLED){
+      banner.style.display = "none";
+      return;
+    }
+    banner.style.display = "block";
+  }
+
+  async function createSharedStorage(apiKey){
+    const res = await fetch("https://api.jsonbin.io/v3/b", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Master-Key": apiKey,
+        "X-Bin-Name": "hamilton-league-config"
+      },
+      body: JSON.stringify(defaultConfig())
+    });
+    if(!res.ok){
+      const msg = await res.text().catch(()=> "");
+      throw new Error(`No se pudo crear el almacenamiento (código ${res.status}). Revisá que la key esté bien copiada. ${msg}`);
+    }
+    const data = await res.json();
+    return data.metadata.id;
+  }
+
+  function downloadConfiguredFile(apiKey, binId){
+    const esc = s => String(s).replace(/\\/g,"\\\\").replace(/"/g,'\\"');
+    let html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+    html = html.replace('const JSONBIN_API_KEY = "";', `const JSONBIN_API_KEY = "${esc(apiKey)}";`);
+    html = html.replace('const JSONBIN_BIN_ID = "";', `const JSONBIN_BIN_ID = "${esc(binId)}";`);
+    const blob = new Blob([html], {type: "text/html"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "index.html";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById("btnCreateCloud").addEventListener("click", async ()=>{
+    const apiKey = document.getElementById("cloudApiKeyInput").value.trim();
+    const statusEl = document.getElementById("cloudStatus");
+    if(!apiKey){ statusEl.textContent = "Pegá primero tu X-Master-Key."; return; }
+    statusEl.textContent = "Creando almacenamiento…";
+    try{
+      const binId = await createSharedStorage(apiKey);
+      downloadConfiguredFile(apiKey, binId);
+      statusEl.innerHTML = `✅ Listo — se descargó tu <b>index.html</b> ya conectado. Subilo a GitHub Pages / Netlify (reemplazando el archivo viejo) y compartí ese link con Roberto y Nicolas.`;
+    }catch(err){
+      statusEl.textContent = "Error: " + err.message;
+    }
+  });
+
+  document.getElementById("btnSync").addEventListener("click", async ()=>{
+    if(!SHARED_STORAGE_ENABLED){
+      alert("Todavía no conectaste el almacenamiento compartido — mirá el panel de arriba.");
+      return;
+    }
+    setStatus(false, "Sincronizando…");
+    config = await loadConfig();
+    if(config && config.participants && config.participants.some(p=>p.name)){
+      renderDashboard();
+    } else {
+      els.emptyState.style.display = "block";
+      setStatus(true, "Sin datos todavía");
+    }
+  });
+
+  // ---------- boot ----------
+  (async function boot(){
+    setupCloudBanner();
+    if(SHARED_STORAGE_ENABLED) setStatus(false, "Sincronizando…");
+    config = await loadConfig();
+    if(config && config.participants && config.participants.some(p=>p.name)){
+      renderDashboard();
+    } else {
+      els.emptyState.style.display = "block";
+      if(!SHARED_STORAGE_ENABLED) setStatus(false, "Sin configurar");
+    }
+  })();
+
+})();
+</script>
+</body>
+</html>
