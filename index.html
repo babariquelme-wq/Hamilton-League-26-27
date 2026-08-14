@@ -91,7 +91,7 @@
   .section-title{ font-family:'Oswald',sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; font-size:20px; }
   .section-sub{ color:var(--muted); font-size:13px; }
 
-  .board{ background:var(--panel); border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .board{ background:var(--panel); border:1px solid var(--line); border-radius:6px; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }
   table{ width:100%; border-collapse:collapse; }
   thead th{
     text-align:left; font-family:'Oswald',sans-serif; font-size:11px; letter-spacing:0.08em;
@@ -174,6 +174,35 @@
     padding:8px 14px; border-radius:3px; cursor:pointer; z-index:2;
   }
   #introSkip:hover{ background:rgba(255,255,255,0.16); color:#fff; }
+
+  /* ---------- Ajustes para celular ---------- */
+  @media(max-width:600px){
+    header.hero{ padding:20px 14px 14px; }
+    main{ padding:0 14px; }
+    .flag-jp{ width:38px; height:26px; }
+    .flag-jp span{ width:11px; height:11px; }
+    .eyebrow{ font-size:15px; }
+    h1.title{ font-size:clamp(30px, 12vw, 46px); margin-bottom:10px; }
+    .subtitle{ font-size:13px; }
+    .hero-actions{ gap:8px; }
+    .btn{ font-size:11px; padding:9px 12px; }
+    .btn.small{ font-size:10px; padding:6px 10px; }
+    .status-pill{ font-size:11px; width:100%; }
+    .section{ margin-top:30px; }
+    .section-title{ font-size:16px; }
+    .section-sub{ font-size:11px; }
+    .card{ padding:14px; }
+    thead th{ font-size:10px; padding:8px 8px; }
+    tbody td{ font-size:12px; padding:8px 8px; }
+    .pts{ font-size:13px; }
+    .crest{ width:16px; height:16px; margin-right:5px; }
+    .team-name{ display:inline-block; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:middle; }
+    .participant-block h4{ font-size:12px; }
+    .wildcard-row{ font-size:12px; }
+    #cloudBanner input[type=password], #cloudBanner input[type=text]{ max-width:100% !important; width:100%; }
+    #introSkip{ bottom:14px; right:14px; font-size:11px; padding:7px 12px; }
+    #introCaption{ font-size:12px; }
+  }
 </style>
 </head>
 <body>
@@ -225,6 +254,17 @@
       <button class="btn primary" id="btnCreateCloud" type="button">Crear y descargar mi archivo compartido</button>
     </div>
     <p class="hint" id="cloudStatus" style="margin-top:10px;"></p>
+
+    <p class="hint" style="margin-top:18px; border-top:1px solid var(--line); padding-top:14px;">
+      ¿Ya creaste el almacenamiento antes desde otro aparato (por ej. tu compu) y solo querés conectar
+      <b>este</b> dispositivo, sin crear uno nuevo? Pegá los mismos datos acá:
+    </p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <input type="password" id="reconnectApiKeyInput" placeholder="Tu X-Master-Key" style="max-width:220px;">
+      <input type="text" id="reconnectBinIdInput" placeholder="Tu Bin ID" style="max-width:220px;">
+      <button class="btn" id="btnReconnectCloud" type="button">Reconectar este dispositivo</button>
+    </div>
+    <p class="hint" id="reconnectStatus" style="margin-top:8px;"></p>
   </div>
 
   <!-- LOGIN -->
@@ -609,8 +649,8 @@
   // almacenamiento compartido" (aparece arriba cuando faltan). Una vez
   // creado, se completan solos en el archivo que descargues — no hace
   // falta tocar código a mano.
-  const JSONBIN_API_KEY = "";
-  const JSONBIN_BIN_ID = "";
+  const JSONBIN_API_KEY = "$2a$10$1cyCBLE7e.ud.tSRvwrQhuBP1mRRi5EWMdL4dP/oAgK3H6.7M96o.";
+  const JSONBIN_BIN_ID = "6a7e549eda38895dfee20eaf";
 
   // Si este archivo no trae la key/bin incrustados (por ejemplo, porque es
   // una actualización nueva que subiste encima de una ya conectada), se usa
@@ -1253,6 +1293,16 @@
     }catch(err){
       statusEl.textContent = "Error: " + err.message;
     }
+  });
+
+  document.getElementById("btnReconnectCloud").addEventListener("click", ()=>{
+    const apiKey = document.getElementById("reconnectApiKeyInput").value.trim();
+    const binId = document.getElementById("reconnectBinIdInput").value.trim();
+    const statusEl = document.getElementById("reconnectStatus");
+    if(!apiKey || !binId){ statusEl.textContent = "Completá los dos campos."; return; }
+    localStorage.setItem(LS_CLOUD_KEY, JSON.stringify({apiKey, binId}));
+    statusEl.textContent = "¡Conectado! Recargando…";
+    setTimeout(()=> window.location.reload(), 600);
   });
 
   document.getElementById("btnSync").addEventListener("click", async ()=>{
