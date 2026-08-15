@@ -34,7 +34,20 @@
   .ticker-wrap{
     background:#000; border-bottom:1px solid var(--line);
     overflow:hidden; white-space:nowrap; height:34px; display:flex; align-items:center;
+    position:sticky; top:0; z-index:70;
   }
+  .sticky-title{
+    position:sticky; top:34px; z-index:60;
+    background:#0a0a0a; border-bottom:1px solid var(--line);
+    padding:9px 20px; display:flex; align-items:center; gap:8px;
+  }
+  .sticky-title .flag-jp{ width:20px; height:14px; flex-shrink:0; }
+  .sticky-title .flag-jp span{ width:6px; height:6px; }
+  .sticky-title-text{
+    font-family:'Anton','Archivo Black',sans-serif; font-style:italic;
+    font-size:15px; letter-spacing:0.01em; text-transform:uppercase; color:#fff;
+  }
+  .sticky-title-text span{ color:var(--amber); }
   .ticker-tag{
     background:var(--red); color:#fff; font-family:'Oswald',sans-serif; font-weight:700;
     font-size:12px; letter-spacing:0.08em; padding:0 14px; height:34px;
@@ -217,6 +230,10 @@
   <div class="ticker-tag">EN VIVO</div>
   <div class="ticker-track" id="tickerTrack">Cargá los puntos de la tabla para empezar…</div>
 </div>
+<div class="sticky-title">
+  <div class="flag-jp"><span></span></div>
+  <div class="sticky-title-text">HAMILTON <span>LEAGUE</span> 26-27</div>
+</div>
 
 <header class="hero">
   <div class="flag-wrap">
@@ -332,7 +349,7 @@
           <tbody id="standingsInputs"></tbody>
         </table>
       </div>
-      <p class="hint" style="margin-top:14px;">Los comodines no se configuran acá — cada participante los puede agregar cuando quiera, desde el panel principal.</p>
+      <p class="hint" style="margin-top:14px;">Los comodines no se configuran acá — cada participante los puede reservar cuando quiera, desde el panel principal.</p>
 
       <div style="margin-top:18px; display:flex; gap:10px;">
         <button class="btn primary" id="btnSaveConfig" type="button">Guardar y ver tablas</button>
@@ -345,32 +362,37 @@
   <div id="dashboard" style="display:none;">
     <section class="section">
       <div class="section-head">
-        <div><span class="section-num">01</span><span class="section-title">Tabla general — J1 League</span></div>
-        <div class="section-sub" id="j1UpdatedAt"></div>
+        <div><span class="section-num">01</span><span class="section-title">Managers</span></div>
+        <div class="section-sub">Los 3 participantes, de mayor a menor</div>
       </div>
-      <div class="board"><table id="tableJ1"><thead></thead><tbody></tbody></table></div>
+      <div class="board"><table id="tableUsers"><thead></thead><tbody></tbody></table></div>
     </section>
 
     <section class="section">
       <div class="section-head">
-        <div><span class="section-num">02</span><span class="section-title">Managers</span></div>
-        <div class="section-sub">Puntos de sus 2 equipos + bonus/penalización comodín</div>
+        <div><span class="section-num">02</span><span class="section-title">Hamilton League</span></div>
+        <div class="section-sub">Los 6 equipos elegidos, de mayor a menor</div>
       </div>
-      <div class="board"><table id="tableUsers"><thead></thead><tbody></tbody></table></div>
+      <div class="board"><table id="tableTeams"><thead></thead><tbody></tbody></table></div>
+    </section>
 
-      <div class="card" style="margin-top:16px;">
-        <h4 style="margin:0 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted);">Comodines</h4>
-        <p class="hint" style="margin-bottom:14px;">Cada participante puede usar su comodín en cualquier fecha del torneo, cuando quiera — hasta 2 veces en total. Duplica los puntos que sumaron <b>ambos</b> equipos ese día. Ojo: si esa fecha sumaron 2 puntos o menos entre los dos, la fecha siguiente solo suman la mitad de los puntos reales.</p>
+    <section class="section">
+      <div class="section-head">
+        <div><span class="section-num">03</span><span class="section-title">Comodines</span></div>
+        <div class="section-sub">Se reservan sin puntos — se cargan cuando se sabe el resultado</div>
+      </div>
+      <div class="card">
+        <p class="hint" style="margin-bottom:14px;">Cada participante puede reservar su comodín para cualquier fecha del torneo, cuando quiera — hasta 2 veces en total. No suma nada todavía: recién cuando termine esa fecha, cargás el resultado real de sus 2 equipos y ahí se duplica. Si esa fecha sumaron 2 puntos o menos entre los dos, la fecha siguiente solo cuentan la mitad de los puntos reales.</p>
         <div id="wildcardPanel"></div>
       </div>
     </section>
 
     <section class="section">
       <div class="section-head">
-        <div><span class="section-num">03</span><span class="section-title">Hamilton League</span></div>
-        <div class="section-sub">Los 6 equipos, ordenados por puntos reales en la J1</div>
+        <div><span class="section-num">04</span><span class="section-title">Tabla general — J1 League</span></div>
+        <div class="section-sub" id="j1UpdatedAt"></div>
       </div>
-      <div class="board"><table id="tableTeams"><thead></thead><tbody></tbody></table></div>
+      <div class="board"><table id="tableJ1"><thead></thead><tbody></tbody></table></div>
     </section>
   </div>
 
@@ -1019,11 +1041,19 @@
     document.getElementById("loginSection").style.display = "none";
     els.emptyState.style.display = "none";
     els.dashboard.style.display = "block";
-    renderJ1Table();
     renderAll();
     els.j1UpdatedAt.textContent = "Cargado " + new Date().toLocaleString("es-AR");
     setStatus(true, "Torneo configurado");
     updateTicker();
+  }
+
+  function ownerMap(){
+    const ownerOf = {};
+    config.participants.forEach(p=> p.teams.forEach(t=>{
+      if(!t) return;
+      ownerOf[t] = ownerOf[t] ? ownerOf[t] + " / " + p.name : p.name;
+    }));
+    return ownerOf;
   }
 
   function renderAll(){
@@ -1031,17 +1061,23 @@
     renderUserTable(userResults);
     renderTeamsTable(userResults);
     renderWildcardPanel();
+    renderJ1Table();
   }
 
   function renderJ1Table(){
+    const ownerOf = ownerMap();
     const rows = TEAMS.map(team=>({team, ...(config.standings[team]||{played:0,win:0,draw:0,lose:0,pts:0})}))
                        .sort((a,b)=> b.pts - a.pts);
     const thead = `<tr><th class="num">#</th><th>Equipo</th><th class="num">PJ</th><th class="num">G</th><th class="num">E</th><th class="num">P</th><th class="num">Pts</th></tr>`;
     let body = "";
     rows.forEach((r,i)=>{
+      const owner = ownerOf[r.team];
+      const nameCell = owner
+        ? `<span class="team-name" style="font-weight:800;">${r.team}</span><span class="owner-tag">${owner}</span>`
+        : `<span class="team-name">${r.team}</span>`;
       body += `<tr class="${i<3?'top3':''}">
         <td class="num"><span class="rank">${i+1}</span></td>
-        <td class="team-name">${r.team}</td>
+        <td>${nameCell}</td>
         <td class="num">${r.played}</td>
         <td class="num">${r.win}</td>
         <td class="num">${r.draw}</td>
@@ -1053,6 +1089,8 @@
     document.querySelector("#tableJ1 tbody").innerHTML = body;
   }
 
+  // Un comodín pendiente (teamAPts === null) todavía no suma nada.
+  // Se resuelve cuando se carga el resultado real de esa fecha.
   function computeUserResults(){
     const results = config.participants.map((p, idx)=>{
       let base = 0;
@@ -1061,6 +1099,7 @@
       let bonus = 0, penaltyTotal = 0;
       const notes = [];
       entries.forEach(e=>{
+        if(e.teamAPts===null || e.teamAPts===undefined) return; // pendiente, no suma
         const combo = (e.teamAPts||0) + (e.teamBPts||0);
         bonus += combo;
         notes.push(`${p.teams[0]} +${e.teamAPts||0} / ${p.teams[1]} +${e.teamBPts||0}${e.label?` (${e.label})`:""}`);
@@ -1077,10 +1116,7 @@
   }
 
   function renderTeamsTable(userResults){
-    const ownerOf = {};
-    config.participants.forEach(p=> p.teams.forEach(t=>{
-      ownerOf[t] = ownerOf[t] ? ownerOf[t] + " / " + p.name : p.name;
-    }));
+    const ownerOf = ownerMap();
     const topName = userResults[0]?.name;
     const bottomName = userResults[userResults.length-1]?.name;
     const teams = chosenTeams();
@@ -1095,7 +1131,7 @@
       else if(owner===bottomName) ownerBadge = `<span class="badge-rainbow">🌈</span>`;
       body += `<tr class="${i<3?'top3':''}">
         <td class="num"><span class="rank">${i+1}</span></td>
-        <td class="team-name">${r.team}</td>
+        <td class="team-name" style="font-weight:800;">${r.team}</td>
         <td class="muted-inline">${owner}${ownerBadge}</td>
         <td class="num">${r.played||0}</td>
         <td class="pts">${r.pts||0}</td>
@@ -1111,48 +1147,65 @@
       if(!config.wildcards[idx]) config.wildcards[idx] = [];
       const entries = config.wildcards[idx];
       html += `<div class="participant-block" style="background:var(--panel-2);">
-        <h4>${p.name} <span class="muted-inline" style="text-transform:none; letter-spacing:0; color:var(--muted);">(${entries.length}/2 usados)</span></h4>`;
+        <h4>${p.name} <span class="muted-inline" style="text-transform:none; letter-spacing:0; color:var(--muted);">(${entries.length}/2 reservados)</span></h4>`;
+
       entries.forEach((e, eIdx)=>{
-        const combo = (e.teamAPts||0) + (e.teamBPts||0);
-        html += `<div class="wildcard-row" style="justify-content:space-between; align-items:flex-start;">
-          <span>🃏 ${p.teams[0]} +${e.teamAPts||0} · ${p.teams[1]} +${e.teamBPts||0} = ${combo} pts (duplicado)${e.label?` · <span class="muted-inline">${e.label}</span>`:""}</span>
-          <button class="btn small" data-remove-idx="${idx}" data-remove-e="${eIdx}" type="button">Quitar</button>
-        </div>`;
-        if(combo <= 2){
-          if(e.penalty){
-            html += `<div class="penalty-applied">Penalización aplicada: la fecha siguiente sumaron ${e.penalty.realPoints} pts reales → contás solo ${e.penalty.realPoints/2}.</div>`;
-          } else {
-            html += `<div class="penalty-warn">
-              ⚠ Ese día sumaron ${combo} pts entre los dos — la <b>fecha siguiente</b> solo cuenta la mitad de los puntos reales.
-              Cuando la sepas, cargala acá:
-              <div style="display:flex; gap:8px; margin-top:8px; align-items:center; flex-wrap:wrap;">
-                <input type="number" min="0" class="pen-input" data-idx="${idx}" data-e="${eIdx}" style="width:90px;" placeholder="Pts reales">
-                <button class="btn small" data-pen-idx="${idx}" data-pen-e="${eIdx}" type="button">Aplicar penalización</button>
-              </div>
-            </div>`;
+        const pending = (e.teamAPts===null || e.teamAPts===undefined);
+        if(pending){
+          html += `<div class="wildcard-row" style="justify-content:space-between; align-items:flex-start;">
+            <span>🃏 <b>Reservado</b>${e.label?` · <span class="muted-inline">${e.label}</span>`:""} <span class="muted-inline">— todavía sin puntos</span></span>
+            <button class="btn small" data-remove-idx="${idx}" data-remove-e="${eIdx}" type="button">Quitar</button>
+          </div>
+          <div class="penalty-warn" style="background:#0d1a2e; border-color:#1f3f6b; color:#bcd6ff;">
+            Cuando termine esa fecha, cargá cuánto sumó cada equipo:
+            <div style="display:flex; gap:8px; margin-top:8px; align-items:center; flex-wrap:wrap;">
+              <select class="wc-resolve-a" data-idx="${idx}" data-e="${eIdx}">
+                <option value="">${p.teams[0]||"Equipo 1"}: —</option>
+                <option value="3">${p.teams[0]||"Equipo 1"}: ganó (3)</option>
+                <option value="1">${p.teams[0]||"Equipo 1"}: empató (1)</option>
+                <option value="0">${p.teams[0]||"Equipo 1"}: perdió (0)</option>
+              </select>
+              <select class="wc-resolve-b" data-idx="${idx}" data-e="${eIdx}">
+                <option value="">${p.teams[1]||"Equipo 2"}: —</option>
+                <option value="3">${p.teams[1]||"Equipo 1"}: ganó (3)</option>
+                <option value="1">${p.teams[1]||"Equipo 1"}: empató (1)</option>
+                <option value="0">${p.teams[1]||"Equipo 1"}: perdió (0)</option>
+              </select>
+              <button class="btn small primary" data-resolve-idx="${idx}" data-resolve-e="${eIdx}" type="button">Cargar resultado</button>
+            </div>
+          </div>`;
+        } else {
+          const combo = (e.teamAPts||0) + (e.teamBPts||0);
+          html += `<div class="wildcard-row" style="justify-content:space-between; align-items:flex-start;">
+            <span>🃏 <b>Resuelto</b> · ${p.teams[0]} +${e.teamAPts} · ${p.teams[1]} +${e.teamBPts} = ${combo} pts (duplicado)${e.label?` · <span class="muted-inline">${e.label}</span>`:""}</span>
+            <button class="btn small" data-remove-idx="${idx}" data-remove-e="${eIdx}" type="button">Quitar</button>
+          </div>`;
+          if(combo <= 2){
+            if(e.penalty){
+              html += `<div class="penalty-applied">Penalización aplicada: la fecha siguiente sumaron ${e.penalty.realPoints} pts reales → contás solo ${e.penalty.realPoints/2}.</div>`;
+            } else {
+              html += `<div class="penalty-warn">
+                ⚠ Ese día sumaron ${combo} pts entre los dos — la <b>fecha siguiente</b> solo cuenta la mitad de los puntos reales.
+                Cuando la sepas, cargala acá:
+                <div style="display:flex; gap:8px; margin-top:8px; align-items:center; flex-wrap:wrap;">
+                  <input type="number" min="0" class="pen-input" data-idx="${idx}" data-e="${eIdx}" style="width:90px;" placeholder="Pts reales">
+                  <button class="btn small" data-pen-idx="${idx}" data-pen-e="${eIdx}" type="button">Aplicar penalización</button>
+                </div>
+              </div>`;
+            }
           }
         }
       });
+
       if(entries.length < 2){
-        html += `<div class="field-row cols-3" style="margin-top:10px; margin-bottom:0;">
-          <div><label>${p.teams[0]||"Equipo 1"} — pts esa fecha</label>
-            <select class="wc-add-a" data-idx="${idx}">
-              <option value="3">3 (ganó)</option>
-              <option value="1">1 (empató)</option>
-              <option value="0">0 (perdió)</option>
-            </select>
+        html += `<div class="field-row" style="margin-top:10px; margin-bottom:0;">
+          <div><label>Reservar para qué fecha</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" class="wc-add-label" data-idx="${idx}" placeholder="Ej: Fecha 14" style="flex:1;">
+              <button class="btn primary small" data-add-idx="${idx}" type="button">+ Reservar comodín</button>
+            </div>
           </div>
-          <div><label>${p.teams[1]||"Equipo 2"} — pts esa fecha</label>
-            <select class="wc-add-b" data-idx="${idx}">
-              <option value="3">3 (ganó)</option>
-              <option value="1">1 (empató)</option>
-              <option value="0">0 (perdió)</option>
-            </select>
-          </div>
-          <div><label>Fecha / nota (opcional)</label>
-            <input type="text" class="wc-add-label" data-idx="${idx}" placeholder="Ej: Fecha 14"></div>
-        </div>
-        <button class="btn primary small" data-add-idx="${idx}" type="button" style="margin-top:10px;">+ Agregar comodín</button>`;
+        </div>`;
       }
       html += `</div>`;
     });
@@ -1161,14 +1214,24 @@
     document.querySelectorAll("[data-add-idx]").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         const idx = +btn.dataset.addIdx;
-        const aSel = document.querySelector(`.wc-add-a[data-idx="${idx}"]`);
-        const bSel = document.querySelector(`.wc-add-b[data-idx="${idx}"]`);
         const labelInp = document.querySelector(`.wc-add-label[data-idx="${idx}"]`);
         config.wildcards[idx].push({
-          teamAPts: Number(aSel.value), teamBPts: Number(bSel.value),
+          teamAPts: null, teamBPts: null,
           label: labelInp.value.trim(), penalty: null
         });
         if(config.wildcards[idx].length > 2) config.wildcards[idx] = config.wildcards[idx].slice(0,2);
+        saveConfig(config);
+        renderAll();
+      });
+    });
+    document.querySelectorAll("[data-resolve-idx]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const idx = +btn.dataset.resolveIdx, eIdx = +btn.dataset.resolveE;
+        const aSel = document.querySelector(`.wc-resolve-a[data-idx="${idx}"][data-e="${eIdx}"]`);
+        const bSel = document.querySelector(`.wc-resolve-b[data-idx="${idx}"][data-e="${eIdx}"]`);
+        if(aSel.value===""||bSel.value===""){ (aSel.value===""?aSel:bSel).focus(); return; }
+        config.wildcards[idx][eIdx].teamAPts = Number(aSel.value);
+        config.wildcards[idx][eIdx].teamBPts = Number(bSel.value);
         saveConfig(config);
         renderAll();
       });
@@ -1195,10 +1258,10 @@
   }
 
   function renderUserTable(results){
-    const thead = `<tr><th class="num">#</th><th>Participante</th><th>Equipos</th><th class="num">Base</th><th class="num">Comodín</th><th class="num">Total</th></tr>`;
+    const thead = `<tr><th class="num">#</th><th>Participante</th><th>Equipos</th><th class="num">Puntos reales</th><th class="num">Comodín</th><th class="num">Total</th></tr>`;
     let body = "";
     results.forEach((r,i)=>{
-      const wcBadge = r.bonus>0 ? `<span class="badge-joker">🃏 +${r.bonus}</span>` : "";
+      const wcBadge = r.bonus>0 ? `<span class="badge-joker">🃏</span>` : "";
       const posBadge = i===0 ? `<span class="badge-trophy">🏆</span>` : (i===results.length-1 ? `<span class="badge-rainbow">🌈</span>` : "");
       const net = r.bonus - r.penalty;
       body += `<tr class="${i<3?'top3':''}">
