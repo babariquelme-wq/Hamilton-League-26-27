@@ -267,6 +267,19 @@
     background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.18); color:#fff;
   }
   .mgr-pill-asc{ border-color:var(--amber); color:var(--amber); }
+
+  /* ---------- Fixture: próxima fecha y clásicos ---------- */
+  .fx-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 0; border-bottom:1px solid #1b1c1e;
+  }
+  .fx-row:last-child{ border-bottom:none; }
+  .fx-team{ font-weight:700; font-size:13px; }
+  .fx-vs{ color:var(--muted); font-size:12px; margin:0 8px; }
+  .fx-rival{ font-size:13px; }
+  .fx-date{ color:var(--amber); font-size:11px; font-family:'Oswald',sans-serif; letter-spacing:0.03em; white-space:nowrap; }
+  .fx-score{ font-family:'Oswald',sans-serif; font-weight:700; color:var(--amber); font-size:14px; white-space:nowrap; }
+  .fx-empty{ color:var(--muted); font-size:13px; padding:6px 0; }
 </style>
 </head>
 <body>
@@ -396,7 +409,7 @@
       <span id="wikiStatus" class="hint" style="margin-left:10px;"></span>
       <div class="board">
         <table class="std-table">
-          <thead><tr><th>Equipo</th><th class="num">PJ</th><th class="num">G</th><th class="num">E</th><th class="num">P</th><th class="num">Pts</th></tr></thead>
+          <thead><tr><th>Equipo</th><th class="num">PJ</th><th class="num">G</th><th class="num">E</th><th class="num">P</th><th class="num">Dif</th><th class="num">Pts</th></tr></thead>
           <tbody id="standingsInputs"></tbody>
         </table>
       </div>
@@ -429,7 +442,27 @@
 
     <section class="section">
       <div class="section-head">
-        <div><span class="section-num">03</span><span class="section-title">Los Managers</span></div>
+        <div><span class="section-num">03</span><span class="section-title">Fixture</span></div>
+        <div class="section-sub" id="fixtureUpdatedAt">Próxima fecha y clásicos entre los 6 equipos</div>
+      </div>
+      <div class="card">
+        <p class="hint" style="margin-bottom:6px;">Se trae solo, con el mismo botón <b>«Actualizar tabla»</b> de arriba. Es una lectura automática de Wikipedia, así que si algo se ve raro, avisá y lo ajustamos.</p>
+        <p class="hint" id="fixtureStatus" style="margin-bottom:14px;"></p>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h4 style="margin:0 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--amber);">Próxima fecha</h4>
+        <div id="fixtureNext"></div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h4 style="margin:0 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--amber);">Clásicos</h4>
+        <p class="hint" style="margin-bottom:10px;">Cruces entre los 6 equipos elegidos, jugados o por jugarse.</p>
+        <div id="fixtureClasicos"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><span class="section-num">04</span><span class="section-title">Los Managers</span></div>
         <div class="section-sub">Presentación</div>
       </div>
       <div id="mgrGrid">
@@ -481,7 +514,7 @@
 
     <section class="section">
       <div class="section-head">
-        <div><span class="section-num">04</span><span class="section-title">Comodines</span></div>
+        <div><span class="section-num">05</span><span class="section-title">Comodines</span></div>
         <div class="section-sub">Se reservan sin puntos — se cargan cuando se sabe el resultado</div>
       </div>
       <div class="card">
@@ -492,7 +525,7 @@
 
     <section class="section">
       <div class="section-head">
-        <div><span class="section-num">05</span><span class="section-title">Tabla general — J1 League</span></div>
+        <div><span class="section-num">06</span><span class="section-title">Tabla general — J1 League</span></div>
         <div class="section-sub" id="j1UpdatedAt"></div>
       </div>
       <div class="board"><table id="tableJ1"><thead></thead><tbody></tbody></table></div>
@@ -845,8 +878,9 @@
         {name:"", teams:["",""]},
         {name:"", teams:["",""]},
       ],
-      standings: {}, // teamName -> {played,win,draw,lose,pts}
+      standings: {}, // teamName -> {played,win,draw,lose,pts,gd,wikiRank}
       wildcards: [[],[],[]], // per participant idx: array of up to 2 {label, teamAPts, teamBPts, penalty:null|{realPoints}}
+      fixtureMatches: [], // [{home, away, scoreHome, scoreAway, date}]
     };
   }
 
@@ -894,19 +928,19 @@
 
   function renderStandingsInputs(){
     let rows = "";
-    const sortedTeams = [...TEAMS].sort((a,b)=>{
-      const ptsA = Number(config.standings[a]?.pts) || 0;
-      const ptsB = Number(config.standings[b]?.pts) || 0;
-      return ptsB - ptsA;
-    });
+    const sortedTeams = [...TEAMS].sort((a,b)=> compareStandings(
+      {wikiRank:config.standings[a]?.wikiRank, pts:config.standings[a]?.pts, gd:config.standings[a]?.gd},
+      {wikiRank:config.standings[b]?.wikiRank, pts:config.standings[b]?.pts, gd:config.standings[b]?.gd}
+    ));
     sortedTeams.forEach(team=>{
-      const s = config.standings[team] || {played:"",win:"",draw:"",lose:"",pts:""};
+      const s = config.standings[team] || {played:"",win:"",draw:"",lose:"",gd:"",pts:""};
       rows += `<tr>
         <td class="team-name">${team}</td>
         <td class="num"><input type="number" min="0" class="std-input st-field" data-team="${team}" data-field="played" value="${s.played}"></td>
         <td class="num"><input type="number" min="0" class="std-input st-field" data-team="${team}" data-field="win" value="${s.win}"></td>
         <td class="num"><input type="number" min="0" class="std-input st-field" data-team="${team}" data-field="draw" value="${s.draw}"></td>
         <td class="num"><input type="number" min="0" class="std-input st-field" data-team="${team}" data-field="lose" value="${s.lose}"></td>
+        <td class="num"><input type="number" class="std-input st-field" data-team="${team}" data-field="gd" value="${s.gd!==undefined?s.gd:''}"></td>
         <td class="num"><input type="number" min="0" class="std-input st-field" data-team="${team}" data-field="pts" value="${s.pts}" style="color:var(--amber); font-weight:700;"></td>
       </tr>`;
     });
@@ -933,6 +967,18 @@
       }
     });
     return best;
+  }
+
+  // Ordena respetando el orden real de la tabla de Wikipedia (ya resuelve empates
+  // correctamente); si algún equipo no tiene ese dato (carga manual), cae a
+  // puntos y después diferencia de gol.
+  function compareStandings(a, b){
+    const ra = a.wikiRank, rb = b.wikiRank;
+    if(ra!=null && rb!=null) return ra - rb;
+    if(ra!=null) return -1;
+    if(rb!=null) return 1;
+    if((b.pts||0) !== (a.pts||0)) return (b.pts||0) - (a.pts||0);
+    return (b.gd||0) - (a.gd||0);
   }
 
   async function fetchWikipediaStandingsRaw(){
@@ -963,6 +1009,7 @@
           else if(/^W\b/i.test(h)) map.win=i;
           else if(/^D\b/i.test(h)) map.draw=i;
           else if(/^L\b/i.test(h)) map.lose=i;
+          else if(/^GD\b/i.test(h)) map.gd=i;
           else if(/^Pts/i.test(h)) map.pts=i;
         });
         if(map.team!==undefined && map.pts!==undefined){
@@ -975,6 +1022,7 @@
     const rows = Array.from(standingsTable.querySelectorAll("tr")).slice(1);
     const newStandings = {};
     let matched = 0;
+    let rank = 0;
     rows.forEach(row=>{
       const cells = Array.from(row.children);
       if(cells.length < 3) return;
@@ -984,17 +1032,85 @@
       const team = matchTeam(teamName);
       if(!team) return;
       const num = (idx)=> idx!==undefined && cells[idx] ? (parseInt(cells[idx].textContent.trim(),10) || 0) : 0;
+      rank++;
       newStandings[team] = {
         played: num(headerMap.played),
         win: num(headerMap.win),
         draw: num(headerMap.draw),
         lose: num(headerMap.lose),
+        gd: num(headerMap.gd),
         pts: num(headerMap.pts),
+        wikiRank: rank, // orden real tal como aparece en Wikipedia (ya resuelve empates)
       };
       matched++;
     });
     if(matched < 15) throw new Error("Encontré la tabla pero no pude leer bien los equipos (matched: " + matched + ").");
     return {newStandings, matched};
+  }
+
+  // ---------- Fixture: se lee de la sección "Resultados" de la Wikipedia en español ----------
+  const SCORE_RE = /^\s*(\d+)\s*[–\-−:]\s*(\d+)\s*$/;
+  const DATE_RE = /(\d{1,2}\s+de\s+[a-záéíóúñ]+(?:\s+de\s+\d{4})?|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|\d{1,2}\s+[a-záéíóúñ]{3,9}\.?(?:\s+\d{4})?)/i;
+
+  async function fetchWikipediaFixturesRaw(){
+    const pageTitle = "J1 League 2026-27";
+    const url = "https://es.wikipedia.org/w/api.php?action=parse&page="
+      + encodeURIComponent(pageTitle) + "&format=json&prop=text&origin=*";
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("No se pudo conectar con Wikipedia (" + res.status + ")");
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.info || "No encontré esa página en Wikipedia en español.");
+    const html = data.parse.text["*"];
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const container = doc.querySelector(".mw-parser-output") || doc.body;
+    const children = Array.from(container.children);
+
+    const startIdx = children.findIndex(el => /^H[234]$/.test(el.tagName) && /resultados/i.test(el.textContent));
+    if(startIdx === -1) throw new Error('No encontré una sección "Resultados" en esa página.');
+    let endIdx = children.length;
+    for(let i=startIdx+1;i<children.length;i++){
+      if(/^H[234]$/.test(children[i].tagName)){ endIdx = i; break; }
+    }
+    const wrapper = doc.createElement("div");
+    children.slice(startIdx+1, endIdx).forEach(el=> wrapper.appendChild(el.cloneNode(true)));
+
+    const rows = Array.from(wrapper.querySelectorAll("tr"));
+    const matches = [];
+    const seen = new Set();
+
+    rows.forEach(row=>{
+      const cells = Array.from(row.children).map(c=>c.textContent.replace(/\s+/g," ").trim());
+      if(cells.length < 2) return;
+
+      let homeIdx = -1, awayIdx = -1, home = null, away = null;
+      for(let i=0;i<cells.length;i++){
+        const team = matchTeam(cells[i]);
+        if(team){
+          if(homeIdx===-1){ homeIdx=i; home=team; }
+          else if(team!==home){ awayIdx=i; away=team; break; }
+        }
+      }
+      if(!home || !away) return;
+
+      let scoreHome = null, scoreAway = null;
+      for(const c of cells){
+        const m = c.match(SCORE_RE);
+        if(m){ scoreHome = parseInt(m[1],10); scoreAway = parseInt(m[2],10); break; }
+      }
+      let date = null;
+      for(const c of cells){
+        const m = c.match(DATE_RE);
+        if(m){ date = m[1]; break; }
+      }
+
+      const key = home+"|"+away+"|"+(date||"")+"|"+homeIdx+"|"+awayIdx;
+      if(seen.has(key)) return;
+      seen.add(key);
+      matches.push({home, away, scoreHome, scoreAway, date});
+    });
+
+    if(matches.length < 5) throw new Error("Encontré la sección pero no pude leer partidos (matched: " + matches.length + "). Puede que el formato de esa tabla haya cambiado.");
+    return matches;
   }
 
   async function fetchWikipediaStandings(){
@@ -1017,21 +1133,30 @@
     const btn = document.getElementById("btnQuickWiki");
     btn.disabled = true;
     setStatus(false, "Actualizando tabla…");
+    if(!config) config = defaultConfig();
+    let standingsMsg = "", fixtureMsg = "";
     try{
-      if(!config) config = defaultConfig();
       const {newStandings, matched} = await fetchWikipediaStandingsRaw();
       config.standings = {...config.standings, ...newStandings};
-      await saveConfig(config);
-      if(config.participants && config.participants.some(p=>p.name)){
-        renderDashboard();
-      } else {
-        setStatus(true, `Tabla actualizada (${matched} equipos) — faltan participantes`);
-      }
+      standingsMsg = `Tabla: ${matched} equipos.`;
     }catch(err){
-      setStatus(false, "Error: " + err.message);
-    }finally{
-      btn.disabled = false;
+      standingsMsg = "Tabla: error — " + err.message;
     }
+    try{
+      config.fixtureMatches = await fetchWikipediaFixturesRaw();
+      fixtureMsg = `Fixture: ${config.fixtureMatches.length} partidos.`;
+    }catch(err){
+      fixtureMsg = "Fixture: error — " + err.message;
+    }
+    await saveConfig(config);
+    if(config.participants && config.participants.some(p=>p.name)){
+      renderDashboard();
+      const fixtureStatusEl = document.getElementById("fixtureStatus");
+      if(fixtureStatusEl && fixtureMsg.startsWith("Fixture: error")) fixtureStatusEl.textContent = fixtureMsg;
+    } else {
+      setStatus(true, `${standingsMsg} ${fixtureMsg} — faltan participantes`);
+    }
+    btn.disabled = false;
   });
 
   function setStatus(ok, text){
@@ -1134,6 +1259,7 @@
       participants,
       standings,
       wildcards: config.wildcards || [[],[],[]],
+      fixtureMatches: config.fixtureMatches || [],
     };
     saveConfig(config);
     hideSetup();
@@ -1165,12 +1291,67 @@
     renderTeamsTable(userResults);
     renderWildcardPanel();
     renderJ1Table();
+    renderFixture();
+  }
+
+  function renderFixture(){
+    const nextEl = document.getElementById("fixtureNext");
+    const clasicosEl = document.getElementById("fixtureClasicos");
+    const statusEl = document.getElementById("fixtureStatus");
+    if(!nextEl || !clasicosEl) return;
+
+    const matches = config.fixtureMatches || [];
+    if(!matches.length){
+      nextEl.innerHTML = `<p class="fx-empty">Todavía no se trajo el fixture — tocá «Actualizar tabla» arriba.</p>`;
+      clasicosEl.innerHTML = `<p class="fx-empty">Todavía no se trajo el fixture.</p>`;
+      if(statusEl) statusEl.textContent = "";
+      return;
+    }
+    if(statusEl) statusEl.textContent = `${matches.length} partidos leídos.`;
+
+    const teams = chosenTeams();
+    const ownerOf = ownerMap();
+
+    // próxima fecha: para cada equipo elegido, el primer partido sin resultado cargado
+    let nextHtml = "";
+    teams.forEach(team=>{
+      const upcoming = matches.find(m => (m.home===team || m.away===team) && (m.scoreHome===null || m.scoreAway===null));
+      if(!upcoming){
+        nextHtml += `<div class="fx-row"><span class="fx-team">${team}</span><span class="fx-empty">Sin próximo partido cargado</span></div>`;
+        return;
+      }
+      const rival = upcoming.home===team ? upcoming.away : upcoming.home;
+      const venue = upcoming.home===team ? "(local)" : "(visitante)";
+      nextHtml += `<div class="fx-row">
+        <span class="fx-team">${team} <span class="muted-inline">${ownerOf[team]?("· "+ownerOf[team]):""}</span></span>
+        <span class="fx-rival">vs ${rival} <span class="muted-inline">${venue}</span></span>
+        <span class="fx-date">${upcoming.date || "Fecha a confirmar"}</span>
+      </div>`;
+    });
+    nextEl.innerHTML = nextHtml || `<p class="fx-empty">Elegí primero los 6 equipos.</p>`;
+
+    // clásicos: cruces entre los propios 6 equipos elegidos
+    const teamSet = new Set(teams);
+    const clasicos = matches.filter(m => teamSet.has(m.home) && teamSet.has(m.away));
+    let clasicosHtml = "";
+    clasicos.forEach(m=>{
+      const played = m.scoreHome!==null && m.scoreAway!==null;
+      clasicosHtml += `<div class="fx-row">
+        <span class="fx-team">${m.home} <span class="muted-inline">${ownerOf[m.home]||""}</span></span>
+        <span class="fx-vs">vs</span>
+        <span class="fx-team">${m.away} <span class="muted-inline">${ownerOf[m.away]||""}</span></span>
+        ${played
+          ? `<span class="fx-score">${m.scoreHome} - ${m.scoreAway}</span>`
+          : `<span class="fx-date">${m.date || "Por jugarse"}</span>`}
+      </div>`;
+    });
+    clasicosEl.innerHTML = clasicosHtml || `<p class="fx-empty">Todavía no se cruzaron entre ellos en el fixture leído.</p>`;
   }
 
   function renderJ1Table(){
     const ownerOf = ownerMap();
     const rows = TEAMS.map(team=>({team, ...(config.standings[team]||{played:0,win:0,draw:0,lose:0,pts:0})}))
-                       .sort((a,b)=> b.pts - a.pts);
+                       .sort(compareStandings);
     const thead = `<tr><th class="num">#</th><th>Equipo</th><th class="num">PJ</th><th class="num">G</th><th class="num">E</th><th class="num">P</th><th class="num">Pts</th></tr>`;
     let body = "";
     rows.forEach((r,i)=>{
@@ -1222,7 +1403,7 @@
     const ownerOf = ownerMap();
     const teams = chosenTeams();
     const rows = teams.map(team=>({team, ...(config.standings[team]||{played:0,pts:0})}))
-                       .sort((a,b)=> (b.pts||0) - (a.pts||0));
+                       .sort(compareStandings);
     const thead = `<tr><th class="num">#</th><th>Equipo</th><th>Representa a</th><th class="num">PJ</th><th class="num">Pts</th></tr>`;
     let body = "";
     rows.forEach((r,i)=>{
@@ -1379,7 +1560,7 @@
   }
 
   function updateTicker(){
-    const allRows = TEAMS.map(team=>({team, pts:(config.standings[team]?.pts)||0})).sort((a,b)=>b.pts-a.pts);
+    const allRows = TEAMS.map(team=>({team, ...(config.standings[team]||{pts:0})})).sort(compareStandings);
     const leader = allRows[0];
     const teams = chosenTeams();
     const ownTop = allRows.filter(r=>teams.includes(r.team))[0];
