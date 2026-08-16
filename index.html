@@ -458,6 +458,16 @@
         <p class="hint" style="margin-bottom:10px;">Cruces entre los 6 equipos elegidos, jugados o por jugarse.</p>
         <div id="fixtureClasicos"></div>
       </div>
+      <div class="card" style="margin-top:14px;">
+        <h4 style="margin:0 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted);">Últimos resultados — Liga completa</h4>
+        <p class="hint" style="margin-bottom:10px;">Todos los partidos de la última fecha jugada, los 20 equipos.</p>
+        <div id="fixtureLeagueResults"></div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h4 style="margin:0 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted);">Próxima fecha — Liga completa</h4>
+        <p class="hint" style="margin-bottom:10px;">Todos los cruces de la próxima jornada, los 20 equipos.</p>
+        <div id="fixtureLeagueNext"></div>
+      </div>
     </section>
 
     <section class="section">
@@ -959,6 +969,7 @@
 
   function matchTeam(rawName){
     const norm = normalizeName(rawName);
+    if(norm.length < 3) return null; // evita falsos positivos con celdas de hora/número/guion
     let best = null;
     TEAMS.forEach(t=>{
       const tn = normalizeName(t);
@@ -1049,8 +1060,20 @@
   }
 
   // ---------- Fixture: se lee de la sección "Resultados" de la Wikipedia en español ----------
-  const SCORE_RE = /^\s*(\d+)\s*[–\-−:]\s*(\d+)\s*$/;
-  const DATE_RE = /(\d{1,2}\s+de\s+[a-záéíóúñ]+(?:\s+de\s+\d{4})?|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|\d{1,2}\s+[a-záéíóúñ]{3,9}\.?(?:\s+\d{4})?)/i;
+  const SCORE_RE = /^\s*(\d+)\s*[–\-−]\s*(\d+)\s*$/;
+  const DATE_RE = /(\d{1,2}\s+de\s+[a-záéíóúñ]+(?:\s+de\s+\d{4})?)/i;
+  const JORNADA_RE = /Jornada\s+(\d+)/i;
+
+  const HEADING_LEVEL = { H2:2, H3:3, H4:4, H5:5, H6:6 };
+  function headingLevelOf(el){
+    if(!el) return null;
+    if(HEADING_LEVEL[el.tagName]) return HEADING_LEVEL[el.tagName];
+    const inner = el.querySelector && el.querySelector("h2, h3, h4, h5, h6");
+    return inner ? HEADING_LEVEL[inner.tagName] : null;
+  }
+  function isHeadingNode(el){
+    return HEADING_LEVEL[el.tagName]!==undefined || el.classList?.contains("mw-heading");
+  }
 
   async function fetchWikipediaFixturesRaw(){
     const pageTitle = "J1 League 2026-27";
@@ -1064,9 +1087,6 @@
     const doc = new DOMParser().parseFromString(html, "text/html");
     const container = doc.querySelector(".mw-parser-output") || doc.body;
 
-    // Wikipedia puede envolver los títulos en <div class="mw-heading"><h2>...</h2></div>
-    // (formato nuevo) o tenerlos sueltos como <h2> directo (formato viejo). Buscamos
-    // en TODOS los h2/h3/h4 sin importar cómo estén envueltos.
     const allHeadings = Array.from(container.querySelectorAll("h2, h3, h4"));
     const CANDIDATES = [/resultados/i, /calendario/i, /encuentros/i, /partidos/i, /clasificaci[oó]n.*jornada/i];
     let target = null;
@@ -1079,56 +1099,83 @@
       throw new Error('No encontré la sección de resultados. Secciones que sí hay: ' + (headingTexts.join(" · ") || "(ninguna encontrada)"));
     }
 
-    // arrancamos desde el título (o su envoltorio .mw-heading si lo tiene) y recorremos
-    // los hermanos siguientes hasta el próximo título de sección
+    // arrancamos desde el título (o su envoltorio .mw-heading) y recorremos los hermanos
+    // siguientes HASTA el próximo título del MISMO nivel o superior — los subtítulos de
+    // adentro (Primera vuelta, Jornada 1, etc.) NO cortan la sección, son parte de ella.
     const startNode = target.closest(".mw-heading") || target;
+    const startLevel = headingLevelOf(startNode) || headingLevelOf(target) || 2;
     const wrapper = doc.createElement("div");
     let node = startNode.nextElementSibling;
     while(node){
-      const isNextHeading = /^H[234]$/.test(node.tagName)
-        || node.classList.contains("mw-heading")
-        || node.querySelector(":scope > h2, :scope > h3, :scope > h4");
-      if(isNextHeading) break;
+      if(isHeadingNode(node) && headingLevelOf(node) <= startLevel) break;
       wrapper.appendChild(node.cloneNode(true));
       node = node.nextElementSibling;
     }
 
-    const rows = Array.from(wrapper.querySelectorAll("tr"));
+    // recorremos todo en orden real (headings + filas de tabla intercalados) para poder
+    // llevar la cuenta de en qué "Jornada N" estamos y arrastrar la fecha cuando una fila
+    // no la repite (Wikipedia la fusiona con rowspan cuando varios partidos son el mismo día).
     const matches = [];
     const seen = new Set();
+    let currentRound = null;
+    let lastDate = null;
 
-    rows.forEach(row=>{
-      const cells = Array.from(row.children).map(c=>c.textContent.replace(/\s+/g," ").trim());
-      if(cells.length < 2) return;
-
-      let homeIdx = -1, awayIdx = -1, home = null, away = null;
-      for(let i=0;i<cells.length;i++){
-        const team = matchTeam(cells[i]);
-        if(team){
-          if(homeIdx===-1){ homeIdx=i; home=team; }
-          else if(team!==home){ awayIdx=i; away=team; break; }
+    function visit(node){
+      if(node.nodeType !== 1) return;
+      if(isHeadingNode(node)){
+        const m = node.textContent.match(JORNADA_RE);
+        if(m){ currentRound = parseInt(m[1],10); lastDate = null; }
+        return;
+      }
+      if(node.tagName === "TR"){
+        const cells = Array.from(node.children).map(c=>c.textContent.replace(/\s+/g," ").trim());
+        if(cells.length === 1){
+          const m = cells[0].match(JORNADA_RE);
+          if(m){ currentRound = parseInt(m[1],10); lastDate = null; }
+          return;
         }
-      }
-      if(!home || !away) return;
+        let homeIdx=-1, awayIdx=-1, home=null, away=null;
+        for(let i=0;i<cells.length;i++){
+          const team = matchTeam(cells[i]);
+          if(team){
+            if(homeIdx===-1){ homeIdx=i; home=team; }
+            else if(team!==home){ awayIdx=i; away=team; break; }
+          }
+        }
+        if(home && away){
+          let scoreHome=null, scoreAway=null;
+          for(const c of cells){
+            const sm = c.match(SCORE_RE);
+            if(sm){ scoreHome=parseInt(sm[1],10); scoreAway=parseInt(sm[2],10); break; }
+          }
+          let date=null;
+          for(const c of cells){
+            const dm = c.match(DATE_RE);
+            if(dm){ date=dm[1]; break; }
+          }
+          if(date) lastDate = date; else date = lastDate;
 
-      let scoreHome = null, scoreAway = null;
-      for(const c of cells){
-        const m = c.match(SCORE_RE);
-        if(m){ scoreHome = parseInt(m[1],10); scoreAway = parseInt(m[2],10); break; }
+          const key = home+"|"+away+"|"+currentRound;
+          if(!seen.has(key)){
+            seen.add(key);
+            matches.push({home, away, scoreHome, scoreAway, date, round: currentRound});
+          }
+        }
+        return;
       }
-      let date = null;
-      for(const c of cells){
-        const m = c.match(DATE_RE);
-        if(m){ date = m[1]; break; }
-      }
+      Array.from(node.children).forEach(visit);
+    }
+    Array.from(wrapper.children).forEach(visit);
 
-      const key = home+"|"+away+"|"+(date||"")+"|"+homeIdx+"|"+awayIdx;
-      if(seen.has(key)) return;
-      seen.add(key);
-      matches.push({home, away, scoreHome, scoreAway, date});
-    });
-
-    if(matches.length < 5) throw new Error("Encontré la sección pero no pude leer partidos (matched: " + matches.length + "). Puede que el formato de esa tabla haya cambiado.");
+    if(matches.length < 5){
+      const tableCount = wrapper.querySelectorAll("table").length;
+      const rowCount = wrapper.querySelectorAll("tr").length;
+      const sample = wrapper.textContent.replace(/\s+/g," ").trim().slice(0, 500);
+      throw new Error(
+        `Encontré la sección pero no pude leer partidos (matched: ${matches.length}, tablas: ${tableCount}, filas: ${rowCount}). `+
+        `Muestra de lo que hay ahí: "${sample}"`
+      );
+    }
     return matches;
   }
 
@@ -1317,12 +1364,16 @@
     const nextEl = document.getElementById("fixtureNext");
     const clasicosEl = document.getElementById("fixtureClasicos");
     const statusEl = document.getElementById("fixtureStatus");
+    const leagueResultsEl = document.getElementById("fixtureLeagueResults");
+    const leagueNextEl = document.getElementById("fixtureLeagueNext");
     if(!nextEl || !clasicosEl) return;
 
     const matches = config.fixtureMatches || [];
     if(!matches.length){
       nextEl.innerHTML = `<p class="fx-empty">Todavía no se trajo el fixture — tocá «Actualizar tabla» arriba.</p>`;
       clasicosEl.innerHTML = `<p class="fx-empty">Todavía no se trajo el fixture.</p>`;
+      if(leagueResultsEl) leagueResultsEl.innerHTML = `<p class="fx-empty">Todavía no se trajo el fixture.</p>`;
+      if(leagueNextEl) leagueNextEl.innerHTML = `<p class="fx-empty">Todavía no se trajo el fixture.</p>`;
       if(statusEl) statusEl.textContent = "";
       return;
     }
@@ -1365,6 +1416,47 @@
       </div>`;
     });
     clasicosEl.innerHTML = clasicosHtml || `<p class="fx-empty">Todavía no se cruzaron entre ellos en el fixture leído.</p>`;
+
+    renderLeagueResults(matches);
+    renderLeagueNextRound(matches);
+  }
+
+  function renderLeagueResults(matches){
+    const el = document.getElementById("fixtureLeagueResults");
+    if(!el) return;
+    const played = matches.filter(m=> m.scoreHome!==null && m.round!=null);
+    if(!played.length){ el.innerHTML = `<p class="fx-empty">Todavía no hay resultados cargados.</p>`; return; }
+    const lastRound = Math.max(...played.map(m=>m.round));
+    const roundMatches = matches.filter(m=> m.round===lastRound && m.scoreHome!==null);
+    let html = `<p class="hint" style="margin-bottom:10px;">Jornada ${lastRound}</p>`;
+    roundMatches.forEach(m=>{
+      html += `<div class="fx-row">
+        <span class="fx-team">${m.home}</span>
+        <span class="fx-vs">vs</span>
+        <span class="fx-team">${m.away}</span>
+        <span class="fx-score">${m.scoreHome} - ${m.scoreAway}</span>
+      </div>`;
+    });
+    el.innerHTML = html;
+  }
+
+  function renderLeagueNextRound(matches){
+    const el = document.getElementById("fixtureLeagueNext");
+    if(!el) return;
+    const pending = matches.filter(m=> m.scoreHome===null && m.round!=null);
+    if(!pending.length){ el.innerHTML = `<p class="fx-empty">No hay próxima fecha cargada.</p>`; return; }
+    const nextRound = Math.min(...pending.map(m=>m.round));
+    const roundMatches = matches.filter(m=> m.round===nextRound && m.scoreHome===null);
+    let html = `<p class="hint" style="margin-bottom:10px;">Jornada ${nextRound}</p>`;
+    roundMatches.forEach(m=>{
+      html += `<div class="fx-row">
+        <span class="fx-team">${m.home}</span>
+        <span class="fx-vs">vs</span>
+        <span class="fx-team">${m.away}</span>
+        <span class="fx-date">${m.date || "Fecha a confirmar"}</span>
+      </div>`;
+    });
+    el.innerHTML = html;
   }
 
   function renderJ1Table(){
@@ -1583,7 +1675,21 @@
     const leader = allRows[0];
     const teams = chosenTeams();
     const ownTop = allRows.filter(r=>teams.includes(r.team))[0];
-    els.tickerTrack.innerHTML = `Puntero de la J1: <b>${leader.team}</b> con ${leader.pts} pts &nbsp;|&nbsp; Mejor ubicado de la Hamilton League: <b>${ownTop ? ownTop.team : "-"}</b> &nbsp;|&nbsp; <b style="color:var(--red);">Ganar es vivir, perder es morir. ¡Esto es el fútbol o muerte!</b> &nbsp;|&nbsp; `;
+
+    let fixtureBit = "";
+    const matches = config.fixtureMatches || [];
+    if(matches.length && teams.length){
+      const teamSet = new Set(teams);
+      const upcoming = matches.filter(m => m.scoreHome===null && (teamSet.has(m.home) || teamSet.has(m.away)));
+      if(upcoming.length){
+        const nextRound = Math.min(...upcoming.map(m=> m.round==null ? Infinity : m.round));
+        const roundOnes = upcoming.filter(m=> m.round===nextRound);
+        const bits = roundOnes.map(m=> `${m.home} vs ${m.away}`).join(" · ");
+        fixtureBit = `<b>Próxima fecha:</b> ${bits} &nbsp;|&nbsp; `;
+      }
+    }
+
+    els.tickerTrack.innerHTML = `Puntero de la J1: <b>${leader.team}</b> con ${leader.pts} pts &nbsp;|&nbsp; Mejor ubicado de la Hamilton League: <b>${ownTop ? ownTop.team : "-"}</b> &nbsp;|&nbsp; ${fixtureBit}<b style="color:var(--red);">Ganar es vivir, perder es morir. ¡Esto es el fútbol o muerte!</b> &nbsp;|&nbsp; `;
   }
 
   // ---------- almacenamiento compartido: banner + creación ----------
