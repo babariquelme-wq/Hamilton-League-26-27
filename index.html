@@ -1063,16 +1063,35 @@
     const html = data.parse.text["*"];
     const doc = new DOMParser().parseFromString(html, "text/html");
     const container = doc.querySelector(".mw-parser-output") || doc.body;
-    const children = Array.from(container.children);
 
-    const startIdx = children.findIndex(el => /^H[234]$/.test(el.tagName) && /resultados/i.test(el.textContent));
-    if(startIdx === -1) throw new Error('No encontré una sección "Resultados" en esa página.');
-    let endIdx = children.length;
-    for(let i=startIdx+1;i<children.length;i++){
-      if(/^H[234]$/.test(children[i].tagName)){ endIdx = i; break; }
+    // Wikipedia puede envolver los títulos en <div class="mw-heading"><h2>...</h2></div>
+    // (formato nuevo) o tenerlos sueltos como <h2> directo (formato viejo). Buscamos
+    // en TODOS los h2/h3/h4 sin importar cómo estén envueltos.
+    const allHeadings = Array.from(container.querySelectorAll("h2, h3, h4"));
+    const CANDIDATES = [/resultados/i, /calendario/i, /encuentros/i, /partidos/i, /clasificaci[oó]n.*jornada/i];
+    let target = null;
+    for(const pattern of CANDIDATES){
+      target = allHeadings.find(h => pattern.test(h.textContent));
+      if(target) break;
     }
+    if(!target){
+      const headingTexts = allHeadings.map(h=>h.textContent.trim()).filter(Boolean);
+      throw new Error('No encontré la sección de resultados. Secciones que sí hay: ' + (headingTexts.join(" · ") || "(ninguna encontrada)"));
+    }
+
+    // arrancamos desde el título (o su envoltorio .mw-heading si lo tiene) y recorremos
+    // los hermanos siguientes hasta el próximo título de sección
+    const startNode = target.closest(".mw-heading") || target;
     const wrapper = doc.createElement("div");
-    children.slice(startIdx+1, endIdx).forEach(el=> wrapper.appendChild(el.cloneNode(true)));
+    let node = startNode.nextElementSibling;
+    while(node){
+      const isNextHeading = /^H[234]$/.test(node.tagName)
+        || node.classList.contains("mw-heading")
+        || node.querySelector(":scope > h2, :scope > h3, :scope > h4");
+      if(isNextHeading) break;
+      wrapper.appendChild(node.cloneNode(true));
+      node = node.nextElementSibling;
+    }
 
     const rows = Array.from(wrapper.querySelectorAll("tr"));
     const matches = [];
