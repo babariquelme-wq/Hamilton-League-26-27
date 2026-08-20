@@ -346,6 +346,153 @@
   .fx-date{ color:var(--amber); font-size:11px; font-family:'Oswald',sans-serif; letter-spacing:0.03em; white-space:nowrap; }
   .fx-score{ font-family:'Oswald',sans-serif; font-weight:700; color:var(--amber); font-size:14px; white-space:nowrap; }
   .fx-empty{ color:var(--muted); font-size:13px; padding:6px 0; }
+
+  /* ---------- Fixture: filas alineadas, VS/marcador siempre al centro ---------- */
+  .fx-row{
+    display:grid; grid-template-columns:1fr 96px 1fr; align-items:center; gap:10px;
+    padding:9px 10px; border:0; border-radius:6px;
+  }
+  .fx-row:nth-child(odd){ background:rgba(255,255,255,0.028); }
+  .fx-side{ min-width:0; }
+  .fx-side.home{ text-align:left; }
+  .fx-side.away{ text-align:right; }
+  .fx-name{
+    font-size:13px; font-weight:700; color:var(--text);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .fx-side.dim .fx-name{ color:var(--muted); font-weight:600; }
+  .fx-side.win .fx-name{ color:var(--green); }
+  .fx-owner{
+    font-family:'Oswald',sans-serif; font-size:9.5px; font-weight:600; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--amber-dim); margin-top:2px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .fx-mid{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .fx-badge{
+    font-family:'Oswald',sans-serif; font-weight:700; letter-spacing:0.05em;
+    min-width:66px; text-align:center; padding:4px 8px; border-radius:5px; white-space:nowrap;
+  }
+  .fx-badge.score{
+    font-size:15px; color:#eafff1;
+    background:linear-gradient(180deg,#237a44,#14532b); border:1px solid #2f9455;
+    box-shadow:0 2px 10px rgba(35,122,68,.28);
+  }
+  .fx-badge.vs{
+    font-size:11px; color:var(--muted); background:rgba(255,255,255,0.04);
+    border:1px solid var(--line);
+  }
+  .fx-when{
+    font-family:'Oswald',sans-serif; font-size:9.5px; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--muted); white-space:nowrap;
+  }
+  .fx-round{
+    display:inline-block; font-family:'Oswald',sans-serif; font-size:10px; font-weight:700;
+    letter-spacing:0.1em; text-transform:uppercase; color:var(--amber);
+    border:1px solid var(--amber-dim); border-radius:4px; padding:3px 9px; margin-bottom:10px;
+  }
+
+  /* ---------- Tabla de managers: sin scroll lateral, total gigante ---------- */
+  .ms-list{ display:flex; flex-direction:column; gap:10px; }
+  .ms-row{
+    display:flex; align-items:center; gap:12px;
+    background:var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:12px 14px;
+  }
+  .ms-row.lead{ border-color:var(--amber-dim); box-shadow:inset 3px 0 0 var(--amber); }
+  .ms-rank{
+    font-family:'Anton','Archivo Black',sans-serif; font-style:italic; font-size:26px;
+    line-height:1; color:var(--muted); width:26px; flex:0 0 auto; text-align:center;
+  }
+  .ms-row.lead .ms-rank{ color:var(--amber); }
+  .ms-main{ flex:1 1 auto; min-width:0; }
+  .ms-name{
+    font-family:'Anton',sans-serif; font-style:italic; font-size:19px; line-height:1.05;
+    text-transform:uppercase; color:#fff; letter-spacing:0.01em;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .ms-teams{
+    font-size:11.5px; color:var(--muted); margin-top:3px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .ms-notes{ font-size:10.5px; color:var(--amber-dim); margin-top:2px; }
+  .ms-pts{ flex:0 0 auto; text-align:right; min-width:64px; }
+  .ms-total{
+    font-family:'Anton','Archivo Black',sans-serif; font-style:italic;
+    font-size:42px; line-height:0.86; color:var(--amber); letter-spacing:-0.01em;
+    transform:skew(-6deg); transform-origin:right;
+  }
+  .ms-sub{
+    font-family:'Oswald',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--muted); margin-top:5px; white-space:nowrap;
+  }
+  .ms-sub b{ color:var(--text); font-weight:700; }
+
+  /* ---------- Bloque destacado: Managers + historial + comodines ---------- */
+  .light-zone{
+    background:#D8D9D3;
+    color:#15161a;
+    margin:44px -24px 0;
+    padding:34px 24px 42px;
+    border-top:2px solid #b6b7b1;
+    border-bottom:2px solid #b6b7b1;
+  }
+  .light-zone .section{ margin-top:0; }
+  .light-zone .section + .section{ margin-top:34px; }
+  .light-zone .section-head{ border-bottom-color:#bcbdb7; }
+  .light-zone .section-title{ color:#101114; }
+  .light-zone .section-num{ color:#12783a; }
+  .light-zone .section-sub{ color:#5c5e58; }
+  .light-zone .card{ background:#EEEFEB; border-color:#c6c7c1; color:#15161a; }
+  .light-zone .muted-inline{ color:#65675f; }
+  .light-zone .participant-block{ background:#E3E4DF; border-color:#c6c7c1; }
+  .light-zone .participant-block h4{ color:#1d4e8c; }
+  .light-zone .wildcard-row{ color:#15161a; }
+  .light-zone label{ color:#5c5e58; }
+  .light-zone input[type=text], .light-zone input[type=number], .light-zone select{
+    background:#fff; border-color:#b8b9b3; color:#15161a;
+  }
+  .light-zone .btn{ background:#fff; border-color:#b8b9b3; color:#15161a; }
+  .light-zone .btn:hover{ border-color:#12783a; color:#12783a; }
+  .light-zone .btn.primary{ background:#12783a; border-color:#12783a; color:#fff; }
+  .light-zone .btn.primary:hover{ background:#0f6631; }
+  .light-zone .penalty-warn{ background:#fbf1da; border-color:#ddbf7c; color:#6a4d1d; }
+  .light-zone .penalty-applied{ background:#e0f4e7; border-color:#8bcda4; color:#145e32; }
+  .light-zone .wc-pending{ background:#e9f0fa; border-color:#a5c1e6; color:#1c3e69; }
+  .light-zone .h2h-box{ background:#EEEFEB; border-color:#c6c7c1; }
+  .light-zone .h2h-head{ color:#67695f; border-bottom-color:#c6c7c1; }
+  .light-zone .h2h-block{ border-top-color:#c6c7c1; }
+  .light-zone .h2h-vs{ color:#101114; }
+  .light-zone .h2h-record{ color:#65675f; }
+  .light-zone .h2h-record b{ color:#101114; }
+  .light-zone .h2h-num.pos{ color:#12783a; }
+  .light-zone .h2h-num.neg{ color:#bd2430; }
+  .light-zone .h2h-num.zero{ color:#8a8c85; }
+  .light-zone .h2h-season{ color:#12783a; }
+  .light-zone .h2h-toggle{ color:#12783a; }
+  .light-zone .h2h-m{ border-bottom-color:rgba(0,0,0,0.08); }
+  .light-zone .h2h-m .t{ color:#65675f; }
+  .light-zone .h2h-m .t.mine{ color:#15161a; }
+  .light-zone .h2h-m .sc{ background:rgba(0,0,0,0.06); color:#15161a; }
+  .light-zone .h2h-m.win .sc{ background:rgba(18,120,58,0.16); color:#0f6631; }
+  .light-zone .h2h-m.lose .sc{ background:rgba(189,36,48,0.14); color:#a41f29; }
+  .light-zone .h2h-m.draw .sc{ background:rgba(0,0,0,0.06); color:#65675f; }
+
+  @media(max-width:600px){
+    .fx-row{ grid-template-columns:1fr 74px 1fr; gap:6px; padding:8px 6px; }
+    .fx-name{ font-size:11.5px; }
+    .fx-badge{ min-width:56px; padding:3px 5px; }
+    .fx-badge.score{ font-size:13px; }
+    .fx-badge.vs{ font-size:10px; }
+    .ms-row{ padding:10px 12px; gap:9px; }
+    .ms-rank{ font-size:22px; width:20px; }
+    .ms-name{ font-size:16px; }
+    .ms-teams{ font-size:10.5px; }
+    .ms-total{ font-size:36px; }
+    .light-zone{ margin:32px -14px 0; padding:24px 14px 30px; }
+    #tableJ1 th.num, #tableJ1 td.num{ padding-left:5px; padding-right:5px; }
+    #tableJ1 .team-name{ max-width:92px; }
+    #tableTeams .team-name{ max-width:150px; }
+  }
 </style>
 </head>
 <body>
@@ -371,12 +518,9 @@
     <div class="eyebrow">26/27 J LEAGUE</div>
   </div>
   <h1 class="title">HAMILTON <span>LEAGUE</span></h1>
-  <p class="subtitle">Cada participante eligió 2 clubes de la J1 League de Japón. Sus puntos reales se suman fecha a fecha — y cada uno tiene dos jornadas comodín para duplicarlos.</p>
   <div class="hero-actions">
-    <button class="btn primary" id="btnLogin">Elegí tu equipo</button>
-    <button class="btn primary" id="btnQuickWiki" title="Trae la tabla actual y la guarda, con un solo clic">📊 Actualizar tabla</button>
-    <button class="btn" id="btnSetup">Configurar / actualizar tabla</button>
-    <button class="btn small" id="btnSync" title="Traer los últimos datos guardados">🔄 Sincronizar</button>
+    <button class="btn primary" id="btnQuickWiki">🔄 Actualizar</button>
+    <button class="btn" id="btnSetup">Configurar</button>
     <span class="status-pill" id="statusPill"><span class="status-dot off" id="statusDot"></span><span id="statusText">Sin configurar</span></span>
   </div>
 </header>
@@ -470,7 +614,6 @@
       <div id="participantsWrap"></div>
 
       <h4 style="margin:24px 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--amber);">2. Tabla actual de la J1</h4>
-      <p class="hint" style="margin-bottom:10px;">Traela automática con un clic, o cargá los números a mano copiándolos de <a href="https://www.jleague.jp/en/j1/standings/" target="_blank" rel="noopener">jleague.jp</a>.</p>
       <button class="btn" id="btnFetchWiki" type="button">Traer tabla actual</button>
       <span id="wikiStatus" class="hint" style="margin-left:10px;"></span>
       <div class="board">
@@ -479,7 +622,6 @@
           <tbody id="standingsInputs"></tbody>
         </table>
       </div>
-      <p class="hint" style="margin-top:14px;">Los comodines no se configuran acá — cada participante los puede reservar cuando quiera, desde el panel principal.</p>
 
       <div style="margin-top:18px; display:flex; gap:10px;">
         <button class="btn primary" id="btnSaveConfig" type="button">Guardar y ver tablas</button>
@@ -493,15 +635,13 @@
     <section class="section">
       <div class="section-head">
         <div><span class="section-num">01</span><span class="section-title">Managers</span></div>
-        <div class="section-sub">Los 3 participantes, de mayor a menor</div>
       </div>
-      <div class="board"><table id="tableUsers"><thead></thead><tbody></tbody></table></div>
+      <div id="userStandings" class="ms-list"></div>
     </section>
 
     <section class="section">
       <div class="section-head">
         <div><span class="section-num">02</span><span class="section-title">Hamilton League</span></div>
-        <div class="section-sub">Los 6 equipos elegidos, de mayor a menor</div>
       </div>
       <div class="board"><table id="tableTeams"><thead></thead><tbody></tbody></table></div>
     </section>
@@ -509,37 +649,26 @@
     <section class="section">
       <div class="section-head">
         <div><span class="section-num">03</span><span class="section-title">Fixture</span></div>
-        <div class="section-sub" id="fixtureUpdatedAt">Próxima fecha y clásicos entre los 6 equipos</div>
+        <div class="section-sub" id="fixtureUpdatedAt"></div>
       </div>
       <div class="card">
-        <p class="hint" style="margin-bottom:6px;">Se trae solo, con el mismo botón <b>«Actualizar tabla»</b> de arriba. Es una lectura automática de Wikipedia, así que si algo se ve raro, avisá y lo ajustamos.</p>
-        <p class="hint" id="fixtureStatus" style="margin-bottom:14px;"></p>
-      </div>
-      <div class="card" style="margin-top:14px;">
         <h4 style="margin:0 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--amber);">Próxima fecha</h4>
         <div id="fixtureNext"></div>
       </div>
       <div class="card" style="margin-top:14px;">
         <h4 style="margin:0 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--amber);">Clásicos</h4>
-        <p class="hint" style="margin-bottom:10px;">Cruces entre los 6 equipos elegidos, jugados o por jugarse.</p>
         <div id="fixtureClasicos"></div>
       </div>
       <div class="card" style="margin-top:14px;">
         <h4 style="margin:0 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted);">Últimos resultados — Liga completa</h4>
-        <p class="hint" style="margin-bottom:10px;">Todos los partidos de la última fecha jugada, los 20 equipos.</p>
         <div id="fixtureLeagueResults"></div>
-      </div>
-      <div class="card" style="margin-top:14px;">
-        <h4 style="margin:0 0 10px 0; font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted);">Próxima fecha — Liga completa</h4>
-        <p class="hint" style="margin-bottom:10px;">Todos los cruces de la próxima jornada, los 20 equipos.</p>
-        <div id="fixtureLeagueNext"></div>
       </div>
     </section>
 
+    <div class="light-zone">
     <section class="section">
       <div class="section-head">
         <div><span class="section-num">04</span><span class="section-title">Los Managers</span></div>
-        <div class="section-sub">Presentación e historial cara a cara</div>
       </div>
       <div id="mgrGrid">
 
@@ -600,13 +729,12 @@
     <section class="section">
       <div class="section-head">
         <div><span class="section-num">05</span><span class="section-title">Comodines</span></div>
-        <div class="section-sub">Se reservan sin puntos — se cargan cuando se sabe el resultado</div>
       </div>
       <div class="card">
-        <p class="hint" style="margin-bottom:14px;">Cada participante puede reservar su comodín para cualquier fecha del torneo, cuando quiera — hasta 2 veces en total. No suma nada todavía: recién cuando termine esa fecha, cargás el resultado real de sus 2 equipos y ahí se duplica. Si esa fecha sumaron 2 puntos o menos entre los dos, la fecha siguiente solo cuentan la mitad de los puntos reales.</p>
         <div id="wildcardPanel"></div>
       </div>
     </section>
+    </div>
 
     <section class="section">
       <div class="section-head">
@@ -618,7 +746,7 @@
   </div>
 
   <div class="empty-state" id="emptyState">
-    Todavía no configuraste el torneo. Tocá <b>«Configurar / actualizar tabla»</b> para cargar los participantes, sus equipos y los puntos actuales de la J1.
+    Tocá <b>«Configurar»</b> para empezar.
   </div>
 
 </main>
@@ -1164,7 +1292,14 @@
   document.getElementById("btnQuickWiki").addEventListener("click", async ()=>{
     const btn = document.getElementById("btnQuickWiki");
     btn.disabled = true;
-    setStatus(false, "Actualizando tabla…");
+    setStatus(false, "Actualizando…");
+    // 1) traer lo último guardado por los demás (si hay almacenamiento compartido)
+    if(SHARED_STORAGE_ENABLED){
+      try{
+        const remote = await loadConfig();
+        if(remote) config = remote;
+      }catch(err){ /* seguimos con lo local */ }
+    }
     if(!config) config = defaultConfig();
     let standingsMsg = "", fixtureMsg = "";
     try{
@@ -1232,7 +1367,6 @@
     document.getElementById("loginSection").style.display = "block";
     goToLoginStep(1);
   }
-  document.getElementById("btnLogin").addEventListener("click", showLogin);
 
   document.querySelectorAll("[data-login-name]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
@@ -1465,99 +1599,74 @@
   function renderFixture(){
     const nextEl = document.getElementById("fixtureNext");
     const clasicosEl = document.getElementById("fixtureClasicos");
-    const statusEl = document.getElementById("fixtureStatus");
     const leagueResultsEl = document.getElementById("fixtureLeagueResults");
-    const leagueNextEl = document.getElementById("fixtureLeagueNext");
     if(!nextEl || !clasicosEl) return;
 
     const matches = config.fixtureMatches || [];
     if(!matches.length){
-      nextEl.innerHTML = `<p class="fx-empty">Todavía no se trajo el fixture — tocá «Actualizar tabla» arriba.</p>`;
-      clasicosEl.innerHTML = `<p class="fx-empty">Todavía no se trajo el fixture.</p>`;
-      if(leagueResultsEl) leagueResultsEl.innerHTML = `<p class="fx-empty">Todavía no se trajo el fixture.</p>`;
-      if(leagueNextEl) leagueNextEl.innerHTML = `<p class="fx-empty">Todavía no se trajo el fixture.</p>`;
-      if(statusEl) statusEl.textContent = "";
+      nextEl.innerHTML = `<p class="fx-empty">Sin fixture cargado.</p>`;
+      clasicosEl.innerHTML = `<p class="fx-empty">Sin fixture cargado.</p>`;
+      if(leagueResultsEl) leagueResultsEl.innerHTML = `<p class="fx-empty">Sin fixture cargado.</p>`;
       return;
     }
-    if(statusEl) statusEl.textContent = `${matches.length} partidos leídos.`;
 
     const teams = chosenTeams();
     const ownerOf = ownerMap();
 
-    // próxima fecha: para cada equipo elegido, el primer partido sin resultado cargado
+    // próxima fecha: para cada equipo elegido, su primer partido sin resultado
     let nextHtml = "";
     teams.forEach(team=>{
-      const upcoming = matches.find(m => (m.home===team || m.away===team) && (m.scoreHome===null || m.scoreAway===null));
-      if(!upcoming){
-        nextHtml += `<div class="fx-row"><span class="fx-team">${team}</span><span class="fx-empty">Sin próximo partido cargado</span></div>`;
+      const m = matches.find(x => (x.home===team || x.away===team) && (x.scoreHome===null || x.scoreAway===null));
+      if(!m){
+        nextHtml += `<div class="fx-row"><div class="fx-side home"><div class="fx-name">${team}</div></div>
+          <div class="fx-mid"><span class="fx-badge vs">—</span></div><div class="fx-side away"></div></div>`;
         return;
       }
-      const rival = upcoming.home===team ? upcoming.away : upcoming.home;
-      const venue = upcoming.home===team ? "(local)" : "(visitante)";
-      nextHtml += `<div class="fx-row">
-        <span class="fx-team">${team} <span class="muted-inline">${ownerOf[team]?("· "+ownerOf[team]):""}</span></span>
-        <span class="fx-rival">vs ${rival} <span class="muted-inline">${venue}</span></span>
-        <span class="fx-date">${upcoming.date || "Fecha a confirmar"}</span>
-      </div>`;
+      nextHtml += fxRow(m, ownerOf, team);
     });
     nextEl.innerHTML = nextHtml || `<p class="fx-empty">Elegí primero los 6 equipos.</p>`;
 
-    // clásicos: cruces entre los propios 6 equipos elegidos
+    // clásicos: cruces entre los 6 equipos elegidos
     const teamSet = new Set(teams);
     const clasicos = matches.filter(m => teamSet.has(m.home) && teamSet.has(m.away));
     let clasicosHtml = "";
-    clasicos.forEach(m=>{
-      const played = m.scoreHome!==null && m.scoreAway!==null;
-      clasicosHtml += `<div class="fx-row">
-        <span class="fx-team">${m.home} <span class="muted-inline">${ownerOf[m.home]||""}</span></span>
-        <span class="fx-vs">vs</span>
-        <span class="fx-team">${m.away} <span class="muted-inline">${ownerOf[m.away]||""}</span></span>
-        ${played
-          ? `<span class="fx-score">${m.scoreHome} - ${m.scoreAway}</span>`
-          : `<span class="fx-date">${m.date || "Por jugarse"}</span>`}
-      </div>`;
-    });
-    clasicosEl.innerHTML = clasicosHtml || `<p class="fx-empty">Todavía no se cruzaron entre ellos en el fixture leído.</p>`;
+    clasicos.forEach(m=>{ clasicosHtml += fxRow(m, ownerOf, null); });
+    clasicosEl.innerHTML = clasicosHtml || `<p class="fx-empty">Todavía no se cruzan entre ellos.</p>`;
 
     renderLeagueResults(matches);
-    renderLeagueNextRound(matches);
+  }
+
+  // Una fila: local a la izquierda, marcador (o VS) siempre centrado, visitante a la derecha.
+  function fxRow(m, ownerOf, focusTeam){
+    const played = m.scoreHome!==null && m.scoreAway!==null;
+    ownerOf = ownerOf || {};
+    let homeCls = "", awayCls = "", mid = "";
+    if(played){
+      if(m.scoreHome > m.scoreAway){ homeCls = "win"; awayCls = "dim"; }
+      else if(m.scoreHome < m.scoreAway){ awayCls = "win"; homeCls = "dim"; }
+      mid = `<span class="fx-badge score">${m.scoreHome} - ${m.scoreAway}</span>`;
+    } else {
+      mid = `<span class="fx-badge vs">VS</span>`;
+      if(m.date) mid += `<span class="fx-when">${m.date}</span>`;
+    }
+    const owner = t => ownerOf[t] ? `<div class="fx-owner">${ownerOf[t]}</div>` : "";
+    const focusMark = t => (focusTeam && t===focusTeam) ? " style=\"text-decoration:underline; text-underline-offset:3px;\"" : "";
+    return `<div class="fx-row">
+      <div class="fx-side home ${homeCls}"><div class="fx-name"${focusMark(m.home)}>${m.home}</div>${owner(m.home)}</div>
+      <div class="fx-mid">${mid}</div>
+      <div class="fx-side away ${awayCls}"><div class="fx-name"${focusMark(m.away)}>${m.away}</div>${owner(m.away)}</div>
+    </div>`;
   }
 
   function renderLeagueResults(matches){
     const el = document.getElementById("fixtureLeagueResults");
     if(!el) return;
     const played = matches.filter(m=> m.scoreHome!==null && m.round!=null);
-    if(!played.length){ el.innerHTML = `<p class="fx-empty">Todavía no hay resultados cargados.</p>`; return; }
+    if(!played.length){ el.innerHTML = `<p class="fx-empty">Sin resultados.</p>`; return; }
     const lastRound = Math.max(...played.map(m=>m.round));
     const roundMatches = matches.filter(m=> m.round===lastRound && m.scoreHome!==null);
-    let html = `<p class="hint" style="margin-bottom:10px;">Jornada ${lastRound}</p>`;
-    roundMatches.forEach(m=>{
-      html += `<div class="fx-row">
-        <span class="fx-team">${m.home}</span>
-        <span class="fx-vs">vs</span>
-        <span class="fx-team">${m.away}</span>
-        <span class="fx-score">${m.scoreHome} - ${m.scoreAway}</span>
-      </div>`;
-    });
-    el.innerHTML = html;
-  }
-
-  function renderLeagueNextRound(matches){
-    const el = document.getElementById("fixtureLeagueNext");
-    if(!el) return;
-    const pending = matches.filter(m=> m.scoreHome===null && m.round!=null);
-    if(!pending.length){ el.innerHTML = `<p class="fx-empty">No hay próxima fecha cargada.</p>`; return; }
-    const nextRound = Math.min(...pending.map(m=>m.round));
-    const roundMatches = matches.filter(m=> m.round===nextRound && m.scoreHome===null);
-    let html = `<p class="hint" style="margin-bottom:10px;">Jornada ${nextRound}</p>`;
-    roundMatches.forEach(m=>{
-      html += `<div class="fx-row">
-        <span class="fx-team">${m.home}</span>
-        <span class="fx-vs">vs</span>
-        <span class="fx-team">${m.away}</span>
-        <span class="fx-date">${m.date || "Fecha a confirmar"}</span>
-      </div>`;
-    });
+    let html = `<span class="fx-round">Jornada ${lastRound}</span>`;
+    roundMatches.forEach(m=>{ html += fxRow(m, ownerMap(), null); });
     el.innerHTML = html;
   }
 
@@ -1617,7 +1726,7 @@
     const teams = chosenTeams();
     const rows = teams.map(team=>({team, ...(config.standings[team]||{played:0,pts:0})}))
                        .sort(compareStandings);
-    const thead = `<tr><th class="num">#</th><th>Equipo</th><th>Representa a</th><th class="num">PJ</th><th class="num">Pts</th></tr>`;
+    const thead = `<tr><th class="num">#</th><th>Equipo</th><th class="num">PJ</th><th class="num">Pts</th></tr>`;
     let body = "";
     rows.forEach((r,i)=>{
       const owner = ownerOf[r.team]||"—";
@@ -1626,8 +1735,7 @@
       else if(i===rows.length-1) posBadge = `<span class="badge-rainbow">🌈</span>`;
       body += `<tr class="${i<3?'top3':''}">
         <td class="num"><span class="rank">${i+1}</span></td>
-        <td class="team-name" style="font-weight:800;">${r.team}${posBadge}</td>
-        <td class="muted-inline">${owner}</td>
+        <td><span class="team-name" style="font-weight:800;">${r.team}${posBadge}</span><span class="owner-tag">${owner}</span></td>
         <td class="num">${r.played||0}</td>
         <td class="pts">${r.pts||0}</td>
       </tr>`;
@@ -1641,7 +1749,7 @@
     config.participants.forEach((p, idx)=>{
       if(!config.wildcards[idx]) config.wildcards[idx] = [];
       const entries = config.wildcards[idx];
-      html += `<div class="participant-block" style="background:var(--panel-2);">
+      html += `<div class="participant-block">
         <h4>${p.name} <span class="muted-inline" style="text-transform:none; letter-spacing:0; color:var(--muted);">(${entries.length}/2 reservados)</span></h4>`;
 
       entries.forEach((e, eIdx)=>{
@@ -1651,7 +1759,7 @@
             <span>🃏 <b>Reservado</b>${e.label?` · <span class="muted-inline">${e.label}</span>`:""} <span class="muted-inline">— todavía sin puntos</span></span>
             <button class="btn small" data-remove-idx="${idx}" data-remove-e="${eIdx}" type="button">Quitar</button>
           </div>
-          <div class="penalty-warn" style="background:#0d1a2e; border-color:#1f3f6b; color:#bcd6ff;">
+          <div class="penalty-warn wc-pending">
             Cuando termine esa fecha, cargá cuánto sumó cada equipo:
             <div style="display:flex; gap:8px; margin-top:8px; align-items:center; flex-wrap:wrap;">
               <select class="wc-resolve-a" data-idx="${idx}" data-e="${eIdx}">
@@ -1753,23 +1861,29 @@
   }
 
   function renderUserTable(results){
-    const thead = `<tr><th class="num">#</th><th>Participante</th><th>Equipos</th><th class="num">Puntos reales</th><th class="num">Comodín</th><th class="num">Total</th></tr>`;
-    let body = "";
+    const el = document.getElementById("userStandings");
+    if(!el) return;
+    let html = "";
     results.forEach((r,i)=>{
       const wcBadge = r.bonus>0 ? `<span class="badge-joker">🃏</span>` : "";
-      const posBadge = i===0 ? `<span class="badge-trophy">🏆</span>` : (i===results.length-1 ? `<span class="badge-rainbow">🌈</span>` : "");
+      const posBadge = i===0 ? `<span class="badge-trophy">🏆</span>`
+                     : (i===results.length-1 ? `<span class="badge-rainbow">🌈</span>` : "");
       const net = r.bonus - r.penalty;
-      body += `<tr class="${i<3?'top3':''}">
-        <td class="num"><span class="rank">${i+1}</span></td>
-        <td class="team-name">${r.name}${posBadge}${wcBadge}<span class="owner-tag">${r.notes.join(" · ")}</span></td>
-        <td class="muted-inline">${r.teams.join(" + ")}</td>
-        <td class="num">${r.base}</td>
-        <td class="num">${net!==0 ? (net>0?"+":"")+net : "—"}</td>
-        <td class="pts">${r.total}</td>
-      </tr>`;
+      const netTxt = net!==0 ? ` · <b>${net>0?"+":""}${net}</b> 🃏` : "";
+      html += `<div class="ms-row ${i===0?"lead":""}">
+        <div class="ms-rank">${i+1}</div>
+        <div class="ms-main">
+          <div class="ms-name">${r.name}${posBadge}${wcBadge}</div>
+          <div class="ms-teams">${r.teams.join(" + ")}</div>
+          ${r.notes.length?`<div class="ms-notes">${r.notes.join(" · ")}</div>`:""}
+        </div>
+        <div class="ms-pts">
+          <div class="ms-total">${r.total}</div>
+          <div class="ms-sub"><b>${r.base}</b> pts${netTxt}</div>
+        </div>
+      </div>`;
     });
-    document.querySelector("#tableUsers thead").innerHTML = thead;
-    document.querySelector("#tableUsers tbody").innerHTML = body;
+    el.innerHTML = html;
   }
 
   function updateTicker(){
@@ -1877,20 +1991,6 @@
     setTimeout(()=> window.location.reload(), 600);
   });
 
-  document.getElementById("btnSync").addEventListener("click", async ()=>{
-    if(!SHARED_STORAGE_ENABLED){
-      alert("Todavía no conectaste el almacenamiento compartido — mirá el panel de arriba.");
-      return;
-    }
-    setStatus(false, "Sincronizando…");
-    config = await loadConfig();
-    if(config && config.participants && config.participants.some(p=>p.name)){
-      renderDashboard();
-    } else {
-      els.emptyState.style.display = "block";
-      setStatus(true, "Sin datos todavía");
-    }
-  });
 
   // ---------- boot ----------
   (async function boot(){
