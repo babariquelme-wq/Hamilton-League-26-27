@@ -252,6 +252,24 @@
   a{ color:var(--blue); }
   .empty-state{ text-align:center; padding:40px 20px; color:var(--muted); font-size:14px; }
 
+  /* ---------- Intro: copa y chapas, pixel art ---------- */
+  #introOverlay{
+    position:fixed; inset:0; z-index:9999; background:#0B0B08;
+    display:flex; align-items:center; justify-content:center;
+    opacity:1; transition:opacity .55s ease;
+  }
+  #introOverlay.fade-out{ opacity:0; pointer-events:none; }
+  #introOverlay[hidden]{ display:none; }
+  #introCanvas{
+    display:block; image-rendering:pixelated; image-rendering:crisp-edges;
+  }
+  #introSkip{
+    position:absolute; bottom:20px; right:20px; z-index:2;
+    font-family:'Press Start 2P', monospace; font-size:9px; letter-spacing:0.06em;
+    color:#8A8375; background:transparent; border:0; padding:8px 10px; cursor:pointer;
+  }
+  #introSkip:hover{ color:#F2EEE4; }
+
   /* ---------- Ajustes para celular ---------- */
   @media(max-width:600px){
     header.hero{ padding:20px 14px 14px; }
@@ -634,6 +652,11 @@
 </head>
 <body>
 
+<div id="introOverlay">
+  <canvas id="introCanvas" width="400" height="225"></canvas>
+  <button id="introSkip" type="button">SALTAR</button>
+</div>
+
 <div class="ticker-wrap">
   <div class="ticker-tag">EN VIVO</div>
   <div class="ticker-track" id="tickerTrack">Cargá los puntos de la tabla para empezar…</div>
@@ -896,6 +919,342 @@
 </div>
 
 <script>
+/* ===================== INTRO: LA COPA Y LAS CHAPAS (pixel art) ===================== */
+(function(){
+  "use strict";
+  const overlay = document.getElementById("introOverlay");
+  const canvas  = document.getElementById("introCanvas");
+  const skipBtn = document.getElementById("introSkip");
+  if(!overlay || !canvas) return;
+
+  const W = 400, H = 225;
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  const C = {
+    bg0:"#0B0B08", bg1:"#16160F",
+    goldL:"#FFF0B8", gold:"#F2CE6C", goldM:"#D6A63F", goldD:"#9C7223", goldX:"#5A3F10",
+    backL:"#D9AE55", back:"#B98C33", backD:"#7C5A1C",
+    silL:"#EFEBE0", sil:"#CBC5B6", silM:"#9A9384", silD:"#5E5849", silX:"#221F19",
+    red1:"#A8322A", red2:"#7E211B", red3:"#5A1410", redL:"#C7554A",
+    cream:"#F2EEE4", ink:"#15150F", dim:"#7A7466",
+    blue:"#2E5F9E", crimson:"#C0392B", green:"#3D7A50",
+  };
+
+  const MANAGERS = [
+    { name:"ALVARO",  color:C.blue    },
+    { name:"ROBERTO", color:C.crimson },
+    { name:"NICOLAS", color:C.green   },
+  ];
+
+  function px(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h)); }
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function seg(t,a,b){ return clamp((t-a)/(b-a),0,1); }
+  function easeOut(t){ return 1-Math.pow(1-t,3); }
+  function easeInOut(t){ return t<0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2; }
+  function easeBack(t){ const c=2.70158; return 1 + (c+1)*Math.pow(t-1,3) + c*Math.pow(t-1,2); }
+
+  function text(str,x,y,size,color,align){
+    ctx.font = size + 'px "Press Start 2P", monospace';
+    ctx.textAlign = align || "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = color;
+    ctx.fillText(str, Math.round(x), Math.round(y));
+  }
+  function fitSize(str,maxW,start){
+    let sz = start;
+    while(sz > 4){
+      ctx.font = sz + 'px "Press Start 2P", monospace';
+      if(ctx.measureText(str).width <= maxW) break;
+      sz -= 1;
+    }
+    return sz;
+  }
+
+  // ---------- la copa: cono inclinado con dos pétalos, sobre plinto rojo ----------
+  const CONE_TOP = 6, CONE_BOT = 118, HW_TOP = 28, HW_BOT = 6;
+
+  // hasta dónde baja cada columna del cono (el cono se cierra hacia abajo)
+  function coneBottom(dx){
+    const a = Math.abs(dx);
+    if(a <= HW_BOT) return CONE_BOT;
+    const r = (a - HW_BOT) / (HW_TOP - HW_BOT);
+    const t = 1 - Math.pow(clamp(r,0,1), 1/1.15);
+    return CONE_TOP + (CONE_BOT - CONE_TOP) * t;
+  }
+  // borde superior de cada pétalo (el corte en diagonal)
+  function cutFront(dx){
+    const u = clamp((dx + HW_TOP) / (HW_TOP + 12), 0, 1);
+    return CONE_TOP + 32 * Math.pow(u, 1.35);
+  }
+  function cutBack(dx){
+    const u = clamp((HW_TOP - dx) / (HW_TOP + 6), 0, 1);
+    return CONE_TOP - 2 + 54 * Math.pow(u, 1.6);
+  }
+
+  function drawTrophy(cx, oy, shine){
+    // ---- pétalo de atrás (más apagado) ----
+    for(let dx = -6; dx <= HW_TOP; dx++){
+      const y0 = cutBack(dx), y1 = coneBottom(dx);
+      if(y1 <= y0) continue;
+      const u = (dx + 6) / (HW_TOP + 6);
+      const col = u > 0.82 ? C.backD : (u > 0.5 ? C.back : C.backL);
+      px(cx + dx, y0 + oy, 1, y1 - y0, col);
+      px(cx + dx, y0 + oy, 1, 1, C.goldL);            // filo del corte
+    }
+    // ---- pétalo de adelante (el brillante) ----
+    for(let dx = -HW_TOP; dx <= 12; dx++){
+      const y0 = cutFront(dx), y1 = coneBottom(dx);
+      if(y1 <= y0) continue;
+      const u = (dx + HW_TOP) / (HW_TOP + 12);
+      let col = C.gold;
+      if(u < 0.14) col = C.goldM;
+      else if(u < 0.30) col = C.goldL;
+      else if(u < 0.62) col = C.gold;
+      else if(u < 0.86) col = C.goldM;
+      else col = C.goldD;
+      px(cx + dx, y0 + oy, 1, y1 - y0, col);
+      px(cx + dx, y0 + oy, 1, 2, C.goldL);            // filo del corte
+    }
+    // arista donde se cruzan los dos pétalos
+    for(let dx = 12; dx <= 14; dx++){
+      const y0 = cutFront(12), y1 = coneBottom(dx);
+      if(y1 > y0) px(cx + dx, y0 + oy, 1, y1 - y0, C.goldX);
+    }
+    // sombra interior bajo el corte del pétalo de adelante
+    for(let dx = -HW_TOP + 2; dx <= 10; dx++){
+      const y0 = cutFront(dx);
+      px(cx + dx, y0 + 2 + oy, 1, 2, C.goldM);
+    }
+
+    // ---- pie acampanado ----
+    for(let y = CONE_BOT; y < CONE_BOT + 12; y++){
+      const t = (y - CONE_BOT) / 12;
+      const hw = 6 + 12 * Math.pow(t, 1.7);
+      px(cx - hw, y + oy, hw * 2, 1, C.goldM);
+      px(cx - hw, y + oy, 3, 1, C.gold);
+      px(cx + hw - 3, y + oy, 3, 1, C.goldD);
+    }
+    // ---- anillo ----
+    px(cx-22, 130+oy, 44, 6, C.gold);
+    px(cx-22, 130+oy, 44, 1, C.goldL);
+    px(cx-22, 133+oy, 44, 1, C.goldD);
+    px(cx-22, 135+oy, 44, 1, C.goldX);
+
+    // ---- plinto de madera roja ----
+    const bx = cx - 72, by = 136 + oy, bw = 144, bh = 32;
+    px(bx+3, by, bw-6, bh, C.red2);
+    px(bx, by+3, bw, bh-6, C.red2);
+    px(bx+2, by+1, bw-4, bh-2, C.red2);
+    px(bx+1, by+2, bw-2, bh-4, C.red2);
+    px(bx+3, by, bw-6, 2, C.redL);                     // canto superior brillante
+    px(bx+4, by+2, bw-8, 1, C.red1);
+    px(bx+3, by+bh-3, bw-6, 3, C.red3);                // sombra inferior
+    px(bx+3, by+4, 3, bh-9, C.red1);                   // reflejo lateral
+    px(bx+bw-6, by+4, 3, bh-9, C.red3);
+
+    // ---- brillo que barre la copa ----
+    if(shine > 0 && shine < 1){
+      ctx.save();
+      ctx.globalAlpha = 0.5 * Math.sin(shine * Math.PI);
+      const sx = cx - 34 + shine * 60;
+      for(let y = CONE_TOP; y < CONE_BOT; y++){
+        px(sx + (y - CONE_TOP) * 0.16, y + oy, 4, 1, "#FFFBE6");
+      }
+      ctx.restore();
+    }
+  }
+
+  // ---------- chapas ----------
+  function drawPlaque(x, y, w, h, l1, l2, opts){
+    opts = opts || {};
+    const arc = opts.arc === undefined ? 3 : opts.arc;
+    const pending = !!opts.pending;
+    const base  = pending ? C.silD : C.sil;
+    const light = pending ? C.silM : C.silL;
+    const dark  = pending ? C.silX : C.silD;
+
+    for(let i = 0; i < w; i++){
+      const t = (i / (w - 1)) * 2 - 1;
+      const dy = Math.round(-arc * (1 - t * t));
+      px(x + i, y + dy, 1, h, base);
+      px(x + i, y + dy, 1, 2, light);
+      px(x + i, y + dy + h - 2, 1, 2, dark);
+    }
+    px(x + 4, y + h/2 - 1, 2, 2, dark);
+    px(x + w - 6, y + h/2 - 1, 2, 2, dark);
+
+    let tx = x + w/2, tw = w - 14;
+    if(opts.chip){
+      px(x + 9, y + h/2 - 6 - arc/2, 11, 11, opts.chip);
+      px(x + 9, y + h/2 - 6 - arc/2, 11, 2, "rgba(255,255,255,0.35)");
+      tx = x + 22 + (w - 30) / 2;
+      tw = w - 32;
+    }
+    const cy = y + h/2 - arc + 1;
+    const col = pending ? "#1C1A15" : C.ink;
+    text(l1, tx, cy - 5, fitSize(l1, tw, 6), col);
+    text(l2, tx, cy + 6, fitSize(l2, tw, 8), col);
+  }
+
+  function drawSpark(x, y, k){
+    const r = Math.round(1 + k * 4);
+    ctx.globalAlpha = 1 - k;
+    px(x - r, y, r*2, 1, "#FFF8DC");
+    px(x, y - r, 1, r*2, "#FFF8DC");
+    px(x-1, y-1, 3, 3, "#FFFFFF");
+    ctx.globalAlpha = 1;
+  }
+  const SPARKS = [
+    {dx:-22,y:22,d:1600},{dx:18,y:14,d:2100},{dx:-4,y:38,d:2600},
+    {dx:22,y:52,d:3100},{dx:-26,y:64,d:3700},{dx:8,y:28,d:4300},
+    {dx:-14,y:90,d:4900},{dx:20,y:80,d:5500},
+  ];
+
+  function drawBox(msg, shown, arrow){
+    const bx = 14, by = 174, bw = 372, bh = 40;
+    px(bx, by, bw, bh, C.cream);
+    px(bx, by, bw, 2, C.ink); px(bx, by+bh-2, bw, 2, C.ink);
+    px(bx, by, 2, bh, C.ink); px(bx+bw-2, by, 2, bh, C.ink);
+    px(bx+4, by+4, bw-8, 1, C.dim); px(bx+4, by+bh-5, bw-8, 1, C.dim);
+    const sz = fitSize(msg, bw - 28, 8);
+    text(msg.slice(0, shown), bx + 14, by + bh/2, sz, C.ink, "left");
+    if(arrow) px(bx + bw - 18, by + bh - 13, 6, 6, C.crimson);
+  }
+
+  // ---------- guion ----------
+  const T = {
+    wipe:   [0,    450],
+    rise:   [300,  1550],
+    champ:  [1650, 2150],
+    shine:  [2250, 3100],
+    msg1:   [1900, 3500],
+    move:   [6200, 7350],
+    slot0:  7550, slotGap: 650, slotDur: 620,
+    msg2:   [7700, 9400],
+    flash:  [12300, 12600],
+    end:    12900,
+  };
+  const MSG1 = "ALVARO - CAMPEON CHAMPIONSHIP 25/26";
+  const MSG2 = "J1 LEAGUE 26/27: QUIEN GRABA SU NOMBRE?";
+  const CX_A = 200, CX_B = 86;
+
+  let t0 = null, done = false, raf = 0;
+
+  function frame(now){
+    if(t0 === null) t0 = now;
+    const t = now - t0;
+
+    px(0, 0, W, H, C.bg0);
+    for(let y = 0; y < H; y += 2) px(0, y, W, 1, C.bg1);
+
+    // la copa (y su chapa) se corren a la izquierda en la segunda escena
+    const km = easeInOut(seg(t, T.move[0], T.move[1]));
+    const cx = Math.round(CX_A + (CX_B - CX_A) * km);
+
+    const kr = seg(t, T.rise[0], T.rise[1]);
+    if(kr > 0){
+      const oy = (1 - easeBack(kr)) * 185;
+      drawTrophy(cx, oy, kr >= 1 ? seg(t, T.shine[0], T.shine[1]) : 0);
+
+      const kc = seg(t, T.champ[0], T.champ[1]);
+      if(kc > 0){
+        const h = Math.max(2, Math.round(22 * easeOut(kc)));
+        drawPlaque(cx - 58, 142 + oy + (22 - h)/2, 116, h,
+                   "CHAMPIONSHIP 25/26", "ALVARO", {arc:3});
+      }
+      if(kr >= 1){
+        SPARKS.forEach(sp=>{
+          const k = seg(t, sp.d, sp.d + 520);
+          if(k > 0 && k < 1) drawSpark(cx + sp.dx, sp.y, k);
+        });
+      }
+    }
+
+    // chapas de la temporada en curso
+    MANAGERS.forEach((m, i)=>{
+      const a = T.slot0 + i * T.slotGap;
+      const k = seg(t, a, a + T.slotDur);
+      if(k <= 0) return;
+      const x = 176, y = 36 + i * 42;
+      const dx = (1 - easeBack(k)) * 210;
+      drawPlaque(x + dx, y, 210, 34, "J1 LEAGUE 26/27", m.name,
+                 {chip:m.color, pending:true, arc:3});
+      if(k >= 1 && Math.floor(t / 320) % 2 === 0){
+        px(x + 210 - 14, y + 34 - 10, 5, 5, C.cream);
+      }
+    });
+
+    // diálogo
+    if(t >= T.msg1[0] && t < T.msg2[0]){
+      const n = Math.round(seg(t, T.msg1[0], T.msg1[1]) * MSG1.length);
+      drawBox(MSG1, n, n >= MSG1.length && Math.floor(t/300)%2===0);
+    } else if(t >= T.msg2[0]){
+      const n = Math.round(seg(t, T.msg2[0], T.msg2[1]) * MSG2.length);
+      drawBox(MSG2, n, n >= MSG2.length && Math.floor(t/300)%2===0);
+    }
+
+    // apertura
+    const kw = seg(t, T.wipe[0], T.wipe[1]);
+    if(kw < 1){
+      const bw = W / 10;
+      for(let i = 0; i < 10; i++){
+        const hgt = H * (1 - easeOut(kw));
+        px(i * bw, i % 2 ? H - hgt : 0, bw, hgt, C.bg0);
+      }
+    }
+
+    // fogonazo final
+    const kf = seg(t, T.flash[0], T.flash[1]);
+    if(kf > 0){
+      ctx.globalAlpha = Math.sin(kf * Math.PI);
+      px(0, 0, W, H, "#FFFFFF");
+      ctx.globalAlpha = 1;
+    }
+
+    if(t >= T.end){ finish(); return; }
+    raf = requestAnimationFrame(frame);
+  }
+
+  function resize(){
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let sc = Math.min(vw / W, vh / H) * 0.94;
+    if(sc >= 1) sc = Math.floor(sc);
+    canvas.style.width  = (W * sc) + "px";
+    canvas.style.height = (H * sc) + "px";
+  }
+
+  function finish(){
+    if(done) return;
+    done = true;
+    cancelAnimationFrame(raf);
+    overlay.classList.add("fade-out");
+    document.documentElement.style.overflow = "";
+    document.body.style.overflow = "";
+    window.scrollTo(0, 0);
+    setTimeout(()=>{ overlay.setAttribute("hidden", ""); }, 600);
+    window.removeEventListener("keydown", finish);
+    window.removeEventListener("wheel", finish);
+    window.removeEventListener("touchmove", finish);
+  }
+
+  document.documentElement.style.overflow = "hidden";
+  document.body.style.overflow = "hidden";
+  window.scrollTo(0, 0);
+  resize();
+  window.addEventListener("resize", resize);
+  skipBtn.addEventListener("click", finish);
+  overlay.addEventListener("click", e=>{ if(e.target !== skipBtn) finish(); });
+  window.addEventListener("keydown", finish);
+  window.addEventListener("wheel", finish, {passive:true});
+  window.addEventListener("touchmove", finish, {passive:true});
+
+  const go = ()=> { raf = requestAnimationFrame(frame); };
+  if(document.fonts && document.fonts.load){
+    document.fonts.load('8px "Press Start 2P"').then(go).catch(go);
+  } else { go(); }
+})();
+
 (function(){
   "use strict";
 
@@ -1983,7 +2342,11 @@
       html = await res.text();
     }catch(e){
       // respaldo: si falla (por ejemplo probando el archivo local con doble clic), usamos el DOM actual
+      const ov = document.getElementById("introOverlay");
+      const wasHidden = ov && ov.hasAttribute("hidden");
+      if(ov){ ov.removeAttribute("hidden"); ov.classList.remove("fade-out"); }
       html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      if(ov && wasHidden) ov.setAttribute("hidden", "");
     }
     html = html.replace('const JSONBIN_API_KEY = "";', `const JSONBIN_API_KEY = "${esc(apiKey)}";`);
     html = html.replace('const JSONBIN_BIN_ID = "";', `const JSONBIN_BIN_ID = "${esc(binId)}";`);
