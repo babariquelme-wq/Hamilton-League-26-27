@@ -1369,14 +1369,24 @@
   }
 
   async function fetchWikipediaStandingsRaw(){
-    const pageTitle = "2026\u201327 J1 League";
-    const url = "https://en.wikipedia.org/w/api.php?action=parse&page="
-      + encodeURIComponent(pageTitle) + "&format=json&prop=text&origin=*";
-    const res = await fetch(url);
-    if(!res.ok) throw new Error("No se pudo conectar con Wikipedia (" + res.status + ")");
-    const data = await res.json();
-    if(data.error) throw new Error(data.error.info || "Wikipedia no encontró esa página todavía.");
-    const html = data.parse.text["*"];
+    // El artículo en español se actualiza antes; si falla, se prueba el inglés.
+    const fuentes = [
+      ["https://es.wikipedia.org/w/api.php", "J1 League 2026-27"],
+      ["https://en.wikipedia.org/w/api.php", "2026\u201327 J1 League"],
+    ];
+    let html = null, ultimoError = null;
+    for(const [api, page] of fuentes){
+      try{
+        const res = await fetch(api + "?action=parse&page=" + encodeURIComponent(page)
+          + "&format=json&prop=text&origin=*");
+        if(!res.ok) throw new Error("Wikipedia respondió " + res.status);
+        const data = await res.json();
+        if(data.error) throw new Error(data.error.info || "página no encontrada");
+        html = data.parse.text["*"];
+        break;
+      }catch(err){ ultimoError = err; }
+    }
+    if(!html) throw new Error("No se pudo conectar con Wikipedia — " + (ultimoError && ultimoError.message));
     const doc = new DOMParser().parseFromString(html, "text/html");
     const tables = Array.from(doc.querySelectorAll("table"));
     let standingsTable = null;
@@ -1387,16 +1397,16 @@
       const headers = Array.from(headerRow.querySelectorAll("th")).map(th=>th.textContent.trim());
       // Wikipedia a veces pega links de "v t e" al texto del header (ej. "Teamvte"),
       // así que matcheamos por prefijo en vez de exacto.
-      if(headers.some(h=>/^Pts/i.test(h)) && headers.some(h=>/^(Team|Club)/i.test(h))){
+      if(headers.some(h=>/^Pts/i.test(h)) && headers.some(h=>/^(Team|Club|Equipo)/i.test(h))){
         const map = {};
         headers.forEach((h,i)=>{
           if(/^Pos/i.test(h)) map.pos=i;
-          else if(/^(Team|Club)/i.test(h)) map.team=i;
-          else if(/^Pld/i.test(h)) map.played=i;
-          else if(/^W\b/i.test(h)) map.win=i;
-          else if(/^D\b/i.test(h)) map.draw=i;
-          else if(/^L\b/i.test(h)) map.lose=i;
-          else if(/^GD\b/i.test(h)) map.gd=i;
+          else if(/^(Team|Club|Equipo)/i.test(h)) map.team=i;
+          else if(/^(Pld|PJ)/i.test(h)) map.played=i;
+          else if(/^(W\b|PG)/i.test(h)) map.win=i;
+          else if(/^(D\b|PE)/i.test(h)) map.draw=i;
+          else if(/^(L\b|PP)/i.test(h)) map.lose=i;
+          else if(/^(GD\b|Dif)/i.test(h)) map.gd=i;
           else if(/^Pts/i.test(h)) map.pts=i;
         });
         if(map.team!==undefined && map.pts!==undefined){
@@ -1465,9 +1475,109 @@
 
   const HARDCODED_FIXTURE = [{"home":"Yokohama F Marinos","away":"Kashima Antlers","scoreHome":3,"scoreAway":4,"date":"7 de agosto","round":1},{"home":"Gamba Osaka","away":"Urawa Red Diamonds","scoreHome":4,"scoreAway":3,"date":"7 de agosto","round":1},{"home":"Avispa Fukuoka","away":"Vissel Kobe","scoreHome":0,"scoreAway":1,"date":"8 de agosto","round":1},{"home":"Cerezo Osaka","away":"Fagiano Okayama","scoreHome":2,"scoreAway":1,"date":"8 de agosto","round":1},{"home":"FC Tokyo","away":"Machida Zelvia","scoreHome":1,"scoreAway":5,"date":"8 de agosto","round":1},{"home":"Kashiwa Reysol","away":"Mito HollyHock","scoreHome":2,"scoreAway":1,"date":"8 de agosto","round":1},{"home":"Nagoya Grampus","away":"Shimizu S-Pulse","scoreHome":0,"scoreAway":1,"date":"8 de agosto","round":1},{"home":"Sanfrecce Hiroshima","away":"JEF United Chiba","scoreHome":3,"scoreAway":0,"date":"8 de agosto","round":1},{"home":"Tokyo Verdy","away":"Kawasaki Frontale","scoreHome":1,"scoreAway":1,"date":"9 de agosto","round":1},{"home":"V-Varen Nagasaki","away":"Kyoto Sanga","scoreHome":2,"scoreAway":1,"date":"9 de agosto","round":1},{"home":"Tokyo Verdy","away":"Kashiwa Reysol","scoreHome":1,"scoreAway":3,"date":"14 de agosto","round":2},{"home":"Kashima Antlers","away":"Nagoya Grampus","scoreHome":2,"scoreAway":1,"date":"15 de agosto","round":2},{"home":"Mito HollyHock","away":"Gamba Osaka","scoreHome":1,"scoreAway":1,"date":"15 de agosto","round":2},{"home":"Shimizu S-Pulse","away":"Yokohama F Marinos","scoreHome":0,"scoreAway":1,"date":"15 de agosto","round":2},{"home":"Fagiano Okayama","away":"V-Varen Nagasaki","scoreHome":1,"scoreAway":0,"date":"15 de agosto","round":2},{"home":"Avispa Fukuoka","away":"Cerezo Osaka","scoreHome":3,"scoreAway":0,"date":"15 de agosto","round":2},{"home":"JEF United Chiba","away":"Machida Zelvia","scoreHome":0,"scoreAway":4,"date":"15 de agosto","round":2},{"home":"Kawasaki Frontale","away":"Kyoto Sanga","scoreHome":2,"scoreAway":2,"date":"15 de agosto","round":2},{"home":"Urawa Red Diamonds","away":"Sanfrecce Hiroshima","scoreHome":1,"scoreAway":4,"date":"15 de agosto","round":2},{"home":"Vissel Kobe","away":"FC Tokyo","scoreHome":2,"scoreAway":2,"date":"15 de agosto","round":2},{"home":"Kashiwa Reysol","away":"V-Varen Nagasaki","scoreHome":4,"scoreAway":2,"date":"21 de agosto","round":3,"time":"19:00"},{"home":"FC Tokyo","away":"JEF United Chiba","scoreHome":2,"scoreAway":0,"date":"21 de agosto","round":3,"time":"19:30"},{"home":"Kashima Antlers","away":"Avispa Fukuoka","scoreHome":3,"scoreAway":2,"date":"22 de agosto","round":3,"time":"18:00"},{"home":"Fagiano Okayama","away":"Tokyo Verdy","scoreHome":0,"scoreAway":0,"date":"22 de agosto","round":3,"time":"18:30"},{"home":"Kyoto Sanga","away":"Mito HollyHock","scoreHome":1,"scoreAway":3,"date":"22 de agosto","round":3,"time":"19:00"},{"home":"Cerezo Osaka","away":"Shimizu S-Pulse","scoreHome":1,"scoreAway":0,"date":"22 de agosto","round":3,"time":"19:00"},{"home":"Nagoya Grampus","away":"Gamba Osaka","scoreHome":3,"scoreAway":1,"date":"22 de agosto","round":3,"time":"19:00"},{"home":"Sanfrecce Hiroshima","away":"Kawasaki Frontale","scoreHome":1,"scoreAway":1,"date":"22 de agosto","round":3,"time":"19:15"},{"home":"Yokohama F Marinos","away":"Vissel Kobe","scoreHome":1,"scoreAway":0,"date":"22 de agosto","round":3,"time":"19:30"},{"home":"Machida Zelvia","away":"Urawa Red Diamonds","scoreHome":3,"scoreAway":1,"date":"23 de agosto","round":3,"time":"19:30"},{"home":"Gamba Osaka","away":"Sanfrecce Hiroshima","scoreHome":0,"scoreAway":0,"date":"29 de agosto","round":4,"time":"18:00"},{"home":"Mito HollyHock","away":"Machida Zelvia","scoreHome":1,"scoreAway":1,"date":"29 de agosto","round":4,"time":"18:00"},{"home":"Shimizu S-Pulse","away":"Kashiwa Reysol","scoreHome":0,"scoreAway":1,"date":"29 de agosto","round":4,"time":"18:30"},{"home":"V-Varen Nagasaki","away":"FC Tokyo","scoreHome":0,"scoreAway":3,"date":"29 de agosto","round":4,"time":"18:30"},{"home":"Kawasaki Frontale","away":"JEF United Chiba","scoreHome":4,"scoreAway":2,"date":"29 de agosto","round":4,"time":"19:00"},{"home":"Kyoto Sanga","away":"Avispa Fukuoka","scoreHome":2,"scoreAway":1,"date":"29 de agosto","round":4,"time":"19:00"},{"home":"Nagoya Grampus","away":"Fagiano Okayama","scoreHome":2,"scoreAway":1,"date":"29 de agosto","round":4,"time":"19:00"},{"home":"Urawa Red Diamonds","away":"Yokohama F Marinos","scoreHome":3,"scoreAway":2,"date":"29 de agosto","round":4,"time":"19:00"},{"home":"Tokyo Verdy","away":"Kashima Antlers","scoreHome":0,"scoreAway":2,"date":"29 de agosto","round":4,"time":"19:00"},{"home":"Vissel Kobe","away":"Cerezo Osaka","scoreHome":1,"scoreAway":0,"date":"29 de agosto","round":4,"time":"19:00"},{"home":"Avispa Fukuoka","away":"Urawa Red Diamonds","scoreHome":2,"scoreAway":3,"date":"2 de septiembre","round":5},{"home":"Cerezo Osaka","away":"Kashiwa Reysol","scoreHome":2,"scoreAway":0,"date":"2 de septiembre","round":5},{"home":"JEF United Chiba","away":"Fagiano Okayama","scoreHome":1,"scoreAway":2,"date":"2 de septiembre","round":5},{"home":"Machida Zelvia","away":"Kawasaki Frontale","scoreHome":2,"scoreAway":1,"date":"2 de septiembre","round":5},{"home":"Mito HollyHock","away":"Kashima Antlers","scoreHome":4,"scoreAway":2,"date":"2 de septiembre","round":5},{"home":"Sanfrecce Hiroshima","away":"Nagoya Grampus","scoreHome":3,"scoreAway":0,"date":"2 de septiembre","round":5},{"home":"Shimizu S-Pulse","away":"FC Tokyo","scoreHome":1,"scoreAway":1,"date":"2 de septiembre","round":5},{"home":"V-Varen Nagasaki","away":"Gamba Osaka","scoreHome":0,"scoreAway":0,"date":"2 de septiembre","round":5},{"home":"Tokyo Verdy","away":"Vissel Kobe","scoreHome":0,"scoreAway":2,"date":"2 de septiembre","round":5},{"home":"Yokohama F Marinos","away":"Kyoto Sanga","scoreHome":1,"scoreAway":1,"date":"2 de septiembre","round":5},{"home":"Avispa Fukuoka","away":"Mito HollyHock","scoreHome":1,"scoreAway":1,"date":"5 de septiembre","round":6},{"home":"JEF United Chiba","away":"Gamba Osaka","scoreHome":2,"scoreAway":0,"date":"6 de septiembre","round":6},{"home":"Kashima Antlers","away":"Urawa Red Diamonds","scoreHome":0,"scoreAway":1,"date":"6 de septiembre","round":6},{"home":"Nagoya Grampus","away":"Machida Zelvia","scoreHome":1,"scoreAway":3,"date":"6 de septiembre","round":6},{"home":"Fagiano Okayama","away":"Sanfrecce Hiroshima","scoreHome":3,"scoreAway":2,"date":"6 de septiembre","round":6},{"home":"Cerezo Osaka","away":"Tokyo Verdy","scoreHome":0,"scoreAway":0,"date":"6 de septiembre","round":6},{"home":"Kashiwa Reysol","away":"Yokohama F Marinos","scoreHome":0,"scoreAway":2,"date":"6 de septiembre","round":6},{"home":"Vissel Kobe","away":"V-Varen Nagasaki","scoreHome":3,"scoreAway":1,"date":"6 de septiembre","round":6},{"home":"Kawasaki Frontale","away":"Shimizu S-Pulse","scoreHome":3,"scoreAway":1,"date":"6 de septiembre","round":6},{"home":"FC Tokyo","away":"Kyoto Sanga","scoreHome":2,"scoreAway":0,"date":"6 de septiembre","round":6},{"home":"Mito HollyHock","away":"Kawasaki Frontale","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":7},{"home":"Shimizu S-Pulse","away":"Avispa Fukuoka","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":7},{"home":"Gamba Osaka","away":"FC Tokyo","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":7},{"home":"Kyoto Sanga","away":"Kashiwa Reysol","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":7},{"home":"Machida Zelvia","away":"Yokohama F Marinos","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":7},{"home":"Sanfrecce Hiroshima","away":"Cerezo Osaka","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":7},{"home":"V-Varen Nagasaki","away":"Nagoya Grampus","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":7},{"home":"Vissel Kobe","away":"Kashima Antlers","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":7},{"home":"Tokyo Verdy","away":"JEF United Chiba","scoreHome":null,"scoreAway":null,"date":"13 de septiembre","round":7},{"home":"Urawa Red Diamonds","away":"Fagiano Okayama","scoreHome":null,"scoreAway":null,"date":"13 de septiembre","round":7},{"home":"Avispa Fukuoka","away":"Sanfrecce Hiroshima","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":8},{"home":"Shimizu S-Pulse","away":"JEF United Chiba","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":8},{"home":"Urawa Red Diamonds","away":"Tokyo Verdy","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":8},{"home":"V-Varen Nagasaki","away":"Cerezo Osaka","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":8},{"home":"FC Tokyo","away":"Nagoya Grampus","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":8},{"home":"Kawasaki Frontale","away":"Kashima Antlers","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":8},{"home":"Fagiano Okayama","away":"Kyoto Sanga","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":8},{"home":"Yokohama F Marinos","away":"Mito HollyHock","scoreHome":null,"scoreAway":null,"date":"12 de septiembre","round":8},{"home":"Gamba Osaka","away":"Vissel Kobe","scoreHome":null,"scoreAway":null,"date":"13 de septiembre","round":8},{"home":"Machida Zelvia","away":"Kashiwa Reysol","scoreHome":null,"scoreAway":null,"date":"13 de septiembre","round":8},{"home":"Avispa Fukuoka","away":"Fagiano Okayama","scoreHome":null,"scoreAway":null,"date":null,"round":9},{"home":"Cerezo Osaka","away":"Yokohama F Marinos","scoreHome":null,"scoreAway":null,"date":null,"round":9},{"home":"JEF United Chiba","away":"V-Varen Nagasaki","scoreHome":null,"scoreAway":null,"date":null,"round":9},{"home":"FC Tokyo","away":"Urawa Red Diamonds","scoreHome":null,"scoreAway":null,"date":null,"round":9},{"home":"Kashima Antlers","away":"Gamba Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":9},{"home":"Kashiwa Reysol","away":"Vissel Kobe","scoreHome":null,"scoreAway":null,"date":null,"round":9},{"home":"Kawasaki Frontale","away":"Nagoya Grampus","scoreHome":null,"scoreAway":null,"date":null,"round":9},{"home":"Kyoto Sanga","away":"Machida Zelvia","scoreHome":null,"scoreAway":null,"date":null,"round":9},{"home":"Mito HollyHock","away":"Shimizu S-Pulse","scoreHome":null,"scoreAway":null,"date":null,"round":9},{"home":"Tokyo Verdy","away":"Sanfrecce Hiroshima","scoreHome":null,"scoreAway":null,"date":null,"round":9},{"home":"Cerezo Osaka","away":"Kawasaki Frontale","scoreHome":null,"scoreAway":null,"date":null,"round":10},{"home":"JEF United Chiba","away":"Yokohama F Marinos","scoreHome":null,"scoreAway":null,"date":null,"round":10},{"home":"Kashima Antlers","away":"V-Varen Nagasaki","scoreHome":null,"scoreAway":null,"date":null,"round":10},{"home":"Kashiwa Reysol","away":"Nagoya Grampus","scoreHome":null,"scoreAway":null,"date":null,"round":10},{"home":"Machida Zelvia","away":"Avispa Fukuoka","scoreHome":null,"scoreAway":null,"date":null,"round":10},{"home":"Mito HollyHock","away":"Urawa Red Diamonds","scoreHome":null,"scoreAway":null,"date":null,"round":10},{"home":"Fagiano Okayama","away":"Vissel Kobe","scoreHome":null,"scoreAway":null,"date":null,"round":10},{"home":"Sanfrecce Hiroshima","away":"Kyoto Sanga","scoreHome":null,"scoreAway":null,"date":null,"round":10},{"home":"Shimizu S-Pulse","away":"Gamba Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":10},{"home":"Tokyo Verdy","away":"FC Tokyo","scoreHome":null,"scoreAway":null,"date":null,"round":10},{"home":"Avispa Fukuoka","away":"Gamba Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":11},{"home":"FC Tokyo","away":"Kashiwa Reysol","scoreHome":null,"scoreAway":null,"date":null,"round":11},{"home":"Kawasaki Frontale","away":"Vissel Kobe","scoreHome":null,"scoreAway":null,"date":null,"round":11},{"home":"Kyoto Sanga","away":"Kashima Antlers","scoreHome":null,"scoreAway":null,"date":null,"round":11},{"home":"Nagoya Grampus","away":"Cerezo Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":11},{"home":"Fagiano Okayama","away":"Mito HollyHock","scoreHome":null,"scoreAway":null,"date":null,"round":11},{"home":"Shimizu S-Pulse","away":"Machida Zelvia","scoreHome":null,"scoreAway":null,"date":null,"round":11},{"home":"Urawa Red Diamonds","away":"JEF United Chiba","scoreHome":null,"scoreAway":null,"date":null,"round":11},{"home":"V-Varen Nagasaki","away":"Sanfrecce Hiroshima","scoreHome":null,"scoreAway":null,"date":null,"round":11},{"home":"Yokohama F Marinos","away":"Tokyo Verdy","scoreHome":null,"scoreAway":null,"date":null,"round":11},{"home":"Cerezo Osaka","away":"JEF United Chiba","scoreHome":null,"scoreAway":null,"date":null,"round":12},{"home":"FC Tokyo","away":"Mito HollyHock","scoreHome":null,"scoreAway":null,"date":null,"round":12},{"home":"Gamba Osaka","away":"Kyoto Sanga","scoreHome":null,"scoreAway":null,"date":null,"round":12},{"home":"Kashima Antlers","away":"Kashiwa Reysol","scoreHome":null,"scoreAway":null,"date":null,"round":12},{"home":"Kawasaki Frontale","away":"Fagiano Okayama","scoreHome":null,"scoreAway":null,"date":null,"round":12},{"home":"Nagoya Grampus","away":"Yokohama F Marinos","scoreHome":null,"scoreAway":null,"date":null,"round":12},{"home":"Sanfrecce Hiroshima","away":"Shimizu S-Pulse","scoreHome":null,"scoreAway":null,"date":null,"round":12},{"home":"Urawa Red Diamonds","away":"V-Varen Nagasaki","scoreHome":null,"scoreAway":null,"date":null,"round":12},{"home":"Tokyo Verdy","away":"Avispa Fukuoka","scoreHome":null,"scoreAway":null,"date":null,"round":12},{"home":"Vissel Kobe","away":"Machida Zelvia","scoreHome":null,"scoreAway":null,"date":null,"round":12},{"home":"JEF United Chiba","away":"Avispa Fukuoka","scoreHome":null,"scoreAway":null,"date":null,"round":13},{"home":"Kashima Antlers","away":"Cerezo Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":13},{"home":"Kashiwa Reysol","away":"Urawa Red Diamonds","scoreHome":null,"scoreAway":null,"date":null,"round":13},{"home":"Kyoto Sanga","away":"Shimizu S-Pulse","scoreHome":null,"scoreAway":null,"date":null,"round":13},{"home":"Machida Zelvia","away":"Gamba Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":13},{"home":"Mito HollyHock","away":"Sanfrecce Hiroshima","scoreHome":null,"scoreAway":null,"date":null,"round":13},{"home":"Fagiano Okayama","away":"FC Tokyo","scoreHome":null,"scoreAway":null,"date":null,"round":13},{"home":"V-Varen Nagasaki","away":"Tokyo Verdy","scoreHome":null,"scoreAway":null,"date":null,"round":13},{"home":"Vissel Kobe","away":"Nagoya Grampus","scoreHome":null,"scoreAway":null,"date":null,"round":13},{"home":"Yokohama F Marinos","away":"Kawasaki Frontale","scoreHome":null,"scoreAway":null,"date":null,"round":13},{"home":"Shimizu S-Pulse","away":"Tokyo Verdy","scoreHome":null,"scoreAway":null,"date":null,"round":14},{"home":"Nagoya Grampus","away":"Kyoto Sanga","scoreHome":null,"scoreAway":null,"date":null,"round":14},{"home":"Yokohama F Marinos","away":"Fagiano Okayama","scoreHome":null,"scoreAway":null,"date":null,"round":14},{"home":"Avispa Fukuoka","away":"V-Varen Nagasaki","scoreHome":null,"scoreAway":null,"date":null,"round":14},{"home":"FC Tokyo","away":"Kashima Antlers","scoreHome":null,"scoreAway":null,"date":null,"round":14},{"home":"Kashiwa Reysol","away":"Kawasaki Frontale","scoreHome":null,"scoreAway":null,"date":null,"round":14},{"home":"Machida Zelvia","away":"Sanfrecce Hiroshima","scoreHome":null,"scoreAway":null,"date":null,"round":14},{"home":"Vissel Kobe","away":"Urawa Red Diamonds","scoreHome":null,"scoreAway":null,"date":null,"round":14},{"home":"Gamba Osaka","away":"Cerezo Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":14},{"home":"JEF United Chiba","away":"Mito HollyHock","scoreHome":null,"scoreAway":null,"date":null,"round":14},{"home":"Kashiwa Reysol","away":"JEF United Chiba","scoreHome":null,"scoreAway":null,"date":null,"round":15},{"home":"Machida Zelvia","away":"V-Varen Nagasaki","scoreHome":null,"scoreAway":null,"date":null,"round":15},{"home":"Sanfrecce Hiroshima","away":"Yokohama F Marinos","scoreHome":null,"scoreAway":null,"date":null,"round":15},{"home":"Tokyo Verdy","away":"Nagoya Grampus","scoreHome":null,"scoreAway":null,"date":null,"round":15},{"home":"Cerezo Osaka","away":"FC Tokyo","scoreHome":null,"scoreAway":null,"date":null,"round":15},{"home":"Kawasaki Frontale","away":"Avispa Fukuoka","scoreHome":null,"scoreAway":null,"date":null,"round":15},{"home":"Gamba Osaka","away":"Fagiano Okayama","scoreHome":null,"scoreAway":null,"date":null,"round":15},{"home":"Kashima Antlers","away":"Shimizu S-Pulse","scoreHome":null,"scoreAway":null,"date":null,"round":15},{"home":"Kyoto Sanga","away":"Urawa Red Diamonds","scoreHome":null,"scoreAway":null,"date":null,"round":15},{"home":"Vissel Kobe","away":"Mito HollyHock","scoreHome":null,"scoreAway":null,"date":null,"round":15},{"home":"Avispa Fukuoka","away":"Yokohama F Marinos","scoreHome":null,"scoreAway":null,"date":null,"round":16},{"home":"JEF United Chiba","away":"Nagoya Grampus","scoreHome":null,"scoreAway":null,"date":null,"round":16},{"home":"FC Tokyo","away":"Sanfrecce Hiroshima","scoreHome":null,"scoreAway":null,"date":null,"round":16},{"home":"Mito HollyHock","away":"Tokyo Verdy","scoreHome":null,"scoreAway":null,"date":null,"round":16},{"home":"Fagiano Okayama","away":"Shimizu S-Pulse","scoreHome":null,"scoreAway":null,"date":null,"round":16},{"home":"V-Varen Nagasaki","away":"Kawasaki Frontale","scoreHome":null,"scoreAway":null,"date":null,"round":16},{"home":"Urawa Red Diamonds","away":"Cerezo Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":16},{"home":"Gamba Osaka","away":"Kashiwa Reysol","scoreHome":null,"scoreAway":null,"date":null,"round":16},{"home":"Kashima Antlers","away":"Machida Zelvia","scoreHome":null,"scoreAway":null,"date":null,"round":16},{"home":"Kyoto Sanga","away":"Vissel Kobe","scoreHome":null,"scoreAway":null,"date":null,"round":16},{"home":"Machida Zelvia","away":"Tokyo Verdy","scoreHome":null,"scoreAway":null,"date":null,"round":17},{"home":"Shimizu S-Pulse","away":"Urawa Red Diamonds","scoreHome":null,"scoreAway":null,"date":null,"round":17},{"home":"Kashima Antlers","away":"Fagiano Okayama","scoreHome":null,"scoreAway":null,"date":null,"round":17},{"home":"Kawasaki Frontale","away":"Gamba Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":17},{"home":"Kashiwa Reysol","away":"Sanfrecce Hiroshima","scoreHome":null,"scoreAway":null,"date":null,"round":17},{"home":"Kyoto Sanga","away":"Cerezo Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":17},{"home":"Vissel Kobe","away":"JEF United Chiba","scoreHome":null,"scoreAway":null,"date":null,"round":17},{"home":"Mito HollyHock","away":"V-Varen Nagasaki","scoreHome":null,"scoreAway":null,"date":null,"round":17},{"home":"Yokohama F Marinos","away":"FC Tokyo","scoreHome":null,"scoreAway":null,"date":null,"round":17},{"home":"Nagoya Grampus","away":"Avispa Fukuoka","scoreHome":null,"scoreAway":null,"date":null,"round":17},{"home":"FC Tokyo","away":"Kawasaki Frontale","scoreHome":null,"scoreAway":null,"date":null,"round":18},{"home":"JEF United Chiba","away":"Kashima Antlers","scoreHome":null,"scoreAway":null,"date":null,"round":18},{"home":"Urawa Red Diamonds","away":"Nagoya Grampus","scoreHome":null,"scoreAway":null,"date":null,"round":18},{"home":"Tokyo Verdy","away":"Kyoto Sanga","scoreHome":null,"scoreAway":null,"date":null,"round":18},{"home":"Cerezo Osaka","away":"Mito HollyHock","scoreHome":null,"scoreAway":null,"date":null,"round":18},{"home":"V-Varen Nagasaki","away":"Shimizu S-Pulse","scoreHome":null,"scoreAway":null,"date":null,"round":18},{"home":"Kashiwa Reysol","away":"Avispa Fukuoka","scoreHome":null,"scoreAway":null,"date":null,"round":18},{"home":"Machida Zelvia","away":"Fagiano Okayama","scoreHome":null,"scoreAway":null,"date":null,"round":18},{"home":"Sanfrecce Hiroshima","away":"Vissel Kobe","scoreHome":null,"scoreAway":null,"date":null,"round":18},{"home":"Gamba Osaka","away":"Yokohama F Marinos","scoreHome":null,"scoreAway":null,"date":null,"round":18},{"home":"Cerezo Osaka","away":"Machida Zelvia","scoreHome":null,"scoreAway":null,"date":null,"round":19},{"home":"Shimizu S-Pulse","away":"Vissel Kobe","scoreHome":null,"scoreAway":null,"date":null,"round":19},{"home":"Gamba Osaka","away":"Tokyo Verdy","scoreHome":null,"scoreAway":null,"date":null,"round":19},{"home":"Yokohama F Marinos","away":"V-Varen Nagasaki","scoreHome":null,"scoreAway":null,"date":null,"round":19},{"home":"Kyoto Sanga","away":"JEF United Chiba","scoreHome":null,"scoreAway":null,"date":null,"round":19},{"home":"Fagiano Okayama","away":"Kashiwa Reysol","scoreHome":null,"scoreAway":null,"date":null,"round":19},{"home":"Sanfrecce Hiroshima","away":"Kashima Antlers","scoreHome":null,"scoreAway":null,"date":null,"round":19},{"home":"Avispa Fukuoka","away":"FC Tokyo","scoreHome":null,"scoreAway":null,"date":null,"round":19},{"home":"Nagoya Grampus","away":"Mito HollyHock","scoreHome":null,"scoreAway":null,"date":null,"round":19},{"home":"Urawa Red Diamonds","away":"Kawasaki Frontale","scoreHome":null,"scoreAway":null,"date":null,"round":19},{"home":"JEF United Chiba","away":"Cerezo Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":20},{"home":"Mito HollyHock","away":"FC Tokyo","scoreHome":null,"scoreAway":null,"date":null,"round":20},{"home":"Nagoya Grampus","away":"Sanfrecce Hiroshima","scoreHome":null,"scoreAway":null,"date":null,"round":20},{"home":"Avispa Fukuoka","away":"Shimizu S-Pulse","scoreHome":null,"scoreAway":null,"date":null,"round":20},{"home":"V-Varen Nagasaki","away":"Urawa Red Diamonds","scoreHome":null,"scoreAway":null,"date":null,"round":20},{"home":"Kashima Antlers","away":"Tokyo Verdy","scoreHome":null,"scoreAway":null,"date":null,"round":20},{"home":"Vissel Kobe","away":"Yokohama F Marinos","scoreHome":null,"scoreAway":null,"date":null,"round":20},{"home":"Gamba Osaka","away":"Machida Zelvia","scoreHome":null,"scoreAway":null,"date":null,"round":20},{"home":"Kawasaki Frontale","away":"Kashiwa Reysol","scoreHome":null,"scoreAway":null,"date":null,"round":20},{"home":"Kyoto Sanga","away":"Fagiano Okayama","scoreHome":null,"scoreAway":null,"date":null,"round":20},{"home":"Cerezo Osaka","away":"Gamba Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":21},{"home":"Kashima Antlers","away":"Mito HollyHock","scoreHome":null,"scoreAway":null,"date":null,"round":21},{"home":"Kashiwa Reysol","away":"Shimizu S-Pulse","scoreHome":null,"scoreAway":null,"date":null,"round":21},{"home":"Kyoto Sanga","away":"Yokohama F Marinos","scoreHome":null,"scoreAway":null,"date":null,"round":21},{"home":"Machida Zelvia","away":"JEF United Chiba","scoreHome":null,"scoreAway":null,"date":null,"round":21},{"home":"Nagoya Grampus","away":"FC Tokyo","scoreHome":null,"scoreAway":null,"date":null,"round":21},{"home":"Sanfrecce Hiroshima","away":"Fagiano Okayama","scoreHome":null,"scoreAway":null,"date":null,"round":21},{"home":"V-Varen Nagasaki","away":"Avispa Fukuoka","scoreHome":null,"scoreAway":null,"date":null,"round":21},{"home":"Vissel Kobe","away":"Kawasaki Frontale","scoreHome":null,"scoreAway":null,"date":null,"round":21},{"home":"Tokyo Verdy","away":"Urawa Red Diamonds","scoreHome":null,"scoreAway":null,"date":null,"round":21},{"home":"Avispa Fukuoka","away":"Nagoya Grampus","scoreHome":null,"scoreAway":null,"date":null,"round":22},{"home":"Cerezo Osaka","away":"Vissel Kobe","scoreHome":null,"scoreAway":null,"date":null,"round":22},{"home":"JEF United Chiba","away":"Kawasaki Frontale","scoreHome":null,"scoreAway":null,"date":null,"round":22},{"home":"FC Tokyo","away":"V-Varen Nagasaki","scoreHome":null,"scoreAway":null,"date":null,"round":22},{"home":"Mito HollyHock","away":"Kashiwa Reysol","scoreHome":null,"scoreAway":null,"date":null,"round":22},{"home":"Fagiano Okayama","away":"Gamba Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":22},{"home":"Sanfrecce Hiroshima","away":"Tokyo Verdy","scoreHome":null,"scoreAway":null,"date":null,"round":22},{"home":"Shimizu S-Pulse","away":"Kyoto Sanga","scoreHome":null,"scoreAway":null,"date":null,"round":22},{"home":"Urawa Red Diamonds","away":"Kashima Antlers","scoreHome":null,"scoreAway":null,"date":null,"round":22},{"home":"Yokohama F Marinos","away":"Machida Zelvia","scoreHome":null,"scoreAway":null,"date":null,"round":22},{"home":"JEF United Chiba","away":"FC Tokyo","scoreHome":null,"scoreAway":null,"date":null,"round":23},{"home":"Gamba Osaka","away":"Avispa Fukuoka","scoreHome":null,"scoreAway":null,"date":null,"round":23},{"home":"Kawasaki Frontale","away":"Machida Zelvia","scoreHome":null,"scoreAway":null,"date":null,"round":23},{"home":"Kyoto Sanga","away":"Tokyo Verdy","scoreHome":null,"scoreAway":null,"date":null,"round":23},{"home":"Mito HollyHock","away":"Vissel Kobe","scoreHome":null,"scoreAway":null,"date":null,"round":23},{"home":"Nagoya Grampus","away":"Urawa Red Diamonds","scoreHome":null,"scoreAway":null,"date":null,"round":23},{"home":"Fagiano Okayama","away":"Kashima Antlers","scoreHome":null,"scoreAway":null,"date":null,"round":23},{"home":"Shimizu S-Pulse","away":"Sanfrecce Hiroshima","scoreHome":null,"scoreAway":null,"date":null,"round":23},{"home":"V-Varen Nagasaki","away":"Kashiwa Reysol","scoreHome":null,"scoreAway":null,"date":null,"round":23},{"home":"Yokohama F Marinos","away":"Cerezo Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":23},{"home":"Avispa Fukuoka","away":"Kashiwa Reysol","scoreHome":null,"scoreAway":null,"date":null,"round":24},{"home":"Cerezo Osaka","away":"Sanfrecce Hiroshima","scoreHome":null,"scoreAway":null,"date":null,"round":24},{"home":"Gamba Osaka","away":"Nagoya Grampus","scoreHome":null,"scoreAway":null,"date":null,"round":24},{"home":"Kashima Antlers","away":"JEF United Chiba","scoreHome":null,"scoreAway":null,"date":null,"round":24},{"home":"Kawasaki Frontale","away":"Urawa Red Diamonds","scoreHome":null,"scoreAway":null,"date":null,"round":24},{"home":"Kyoto Sanga","away":"FC Tokyo","scoreHome":null,"scoreAway":null,"date":null,"round":24},{"home":"Machida Zelvia","away":"Shimizu S-Pulse","scoreHome":null,"scoreAway":null,"date":null,"round":24},{"home":"V-Varen Nagasaki","away":"Mito HollyHock","scoreHome":null,"scoreAway":null,"date":null,"round":24},{"home":"Tokyo Verdy","away":"Yokohama F Marinos","scoreHome":null,"scoreAway":null,"date":null,"round":24},{"home":"Vissel Kobe","away":"Fagiano Okayama","scoreHome":null,"scoreAway":null,"date":null,"round":24},{"home":"JEF United Chiba","away":"Tokyo Verdy","scoreHome":null,"scoreAway":null,"date":null,"round":25},{"home":"Kashiwa Reysol","away":"Kyoto Sanga","scoreHome":null,"scoreAway":null,"date":null,"round":25},{"home":"Machida Zelvia","away":"Kashima Antlers","scoreHome":null,"scoreAway":null,"date":null,"round":25},{"home":"Mito HollyHock","away":"Cerezo Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":25},{"home":"Nagoya Grampus","away":"V-Varen Nagasaki","scoreHome":null,"scoreAway":null,"date":null,"round":25},{"home":"Fagiano Okayama","away":"Yokohama F Marinos","scoreHome":null,"scoreAway":null,"date":null,"round":25},{"home":"Sanfrecce Hiroshima","away":"Avispa Fukuoka","scoreHome":null,"scoreAway":null,"date":null,"round":25},{"home":"Shimizu S-Pulse","away":"Kawasaki Frontale","scoreHome":null,"scoreAway":null,"date":null,"round":25},{"home":"Urawa Red Diamonds","away":"FC Tokyo","scoreHome":null,"scoreAway":null,"date":null,"round":25},{"home":"Vissel Kobe","away":"Gamba Osaka","scoreHome":null,"scoreAway":null,"date":null,"round":25}];
 
+  // El artículo en español trae los resultados jornada por jornada, con
+  // Local | Resultado | Visitante | Estadio | Fecha | Hora.
   async function fetchWikipediaFixturesRaw(){
-    // ya no se usa Wikipedia para el fixture — se devuelve directo la base fija de arriba
-    return HARDCODED_FIXTURE;
+    const url = "https://es.wikipedia.org/w/api.php?action=parse&page="
+      + encodeURIComponent("J1 League 2026-27") + "&format=json&prop=text&origin=*";
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("No se pudo conectar con Wikipedia (" + res.status + ")");
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.info || "Wikipedia no encontró esa página.");
+    const doc = new DOMParser().parseFromString(data.parse.text["*"], "text/html");
+
+    const jornadaDe = txt => {
+      const m = (txt || "").match(/Jornada\s+(\d+)/i);
+      return m ? parseInt(m[1], 10) : null;
+    };
+
+    const out = [];
+    let curRound = null;
+
+    // Recorremos el documento en orden: los títulos "Jornada N" van antes de su tabla.
+    Array.from(doc.querySelectorAll("th, caption, div, table")).forEach(el=>{
+      if(el.tagName !== "TABLE"){
+        const t = (el.textContent || "").trim();
+        if(t.length < 60){
+          const j = jornadaDe(t);
+          if(j) curRound = j;
+        }
+        return;
+      }
+
+      const rows = Array.from(el.querySelectorAll("tr"));
+      const headRow = rows.find(tr => Array.from(tr.querySelectorAll("th"))
+        .some(th => /^local/i.test(th.textContent.trim())));
+      if(!headRow) return;
+
+      const heads = Array.from(headRow.querySelectorAll("th")).map(th=> th.textContent.trim().toLowerCase());
+      const iL = heads.findIndex(h=> h.startsWith("local"));
+      const iR = heads.findIndex(h=> h.startsWith("resultado"));
+      const iV = heads.findIndex(h=> h.startsWith("visitante"));
+      const iF = heads.findIndex(h=> h.startsWith("fecha"));
+      const iH = heads.findIndex(h=> h.startsWith("hora"));
+      if(iL < 0 || iR < 0 || iV < 0) return;
+
+      // Si el número de jornada está dentro de esta misma tabla, mandá ese.
+      const propia = jornadaDe(el.textContent.slice(0, 200));
+      const round = propia || curRound;
+
+      let lastDate = "", lastTime = "";
+      rows.forEach(tr=>{
+        if(tr === headRow) return;
+        const cells = Array.from(tr.children);
+        if(cells.length < 3) return;
+        if(!cells[iL] || cells[iL].tagName === "TH") return;
+
+        const home = matchTeam(cells[iL].textContent.trim());
+        const away = cells[iV] ? matchTeam(cells[iV].textContent.trim()) : null;
+        if(!home || !away || home === away) return;
+
+        let sh = null, sa = null;
+        const rTxt = cells[iR] ? cells[iR].textContent.replace(/\s+/g, " ").trim() : "";
+        const mm = rTxt.match(/(\d+)\s*[\u2013\u2212:-]\s*(\d+)/);
+        if(mm){ sh = parseInt(mm[1], 10); sa = parseInt(mm[2], 10); }
+
+        // Fecha y Hora suelen venir con rowspan: si faltan, se arrastra la última.
+        if(iF >= 0 && cells[iF] && cells.length > iF){
+          const d = cells[iF].textContent.replace(/\s+/g, " ").trim();
+          if(d) lastDate = d;
+        }
+        if(iH >= 0 && cells[iH] && cells.length > iH){
+          const h = cells[iH].textContent.replace(/\s+/g, " ").trim();
+          if(/\d{1,2}[:.]\d{2}/.test(h)) lastTime = h;
+        }
+
+        out.push({
+          round: round, home: home, away: away,
+          scoreHome: sh, scoreAway: sa,
+          date: lastDate || null, time: lastTime || null,
+        });
+      });
+    });
+
+    if(!out.length) throw new Error("No encontré las tablas de resultados en esa página.");
+    return out;
+  }
+
+  // Los datos nunca retroceden: se parte de lo que ya había y se pisa solo lo que
+  // Wikipedia trae con información nueva.
+  function mergeFixture(base, fetched){
+    const key = m => m.home + "|" + m.away;
+    const out = (base || []).map(m => Object.assign({}, m));
+    const idx = {};
+    out.forEach((m, i)=> { idx[key(m)] = i; });
+    (fetched || []).forEach(f=>{
+      const i = idx[key(f)];
+      if(i === undefined){ idx[key(f)] = out.length; out.push(f); return; }
+      const cur = out[i];
+      if(f.scoreHome !== null && f.scoreAway !== null){ cur.scoreHome = f.scoreHome; cur.scoreAway = f.scoreAway; }
+      if(f.date) cur.date = f.date;
+      if(f.time) cur.time = f.time;
+      if(f.round != null) cur.round = f.round;
+    });
+    out.sort((a, b)=> (a.round || 0) - (b.round || 0));
+    return out;
   }
 
   async function fetchWikipediaStandings(){
@@ -1507,8 +1617,12 @@
       standingsMsg = "Tabla: error — " + err.message;
     }
     try{
-      config.fixtureMatches = await fetchWikipediaFixturesRaw();
-      fixtureMsg = `Fixture: ${config.fixtureMatches.length} partidos.`;
+      const base = (config.fixtureMatches && config.fixtureMatches.length)
+        ? config.fixtureMatches : HARDCODED_FIXTURE;
+      const traidos = await fetchWikipediaFixturesRaw();
+      config.fixtureMatches = mergeFixture(base, traidos);
+      const conResultado = config.fixtureMatches.filter(m=> m.scoreHome !== null).length;
+      fixtureMsg = `Fixture: ${config.fixtureMatches.length} partidos, ${conResultado} jugados.`;
     }catch(err){
       fixtureMsg = "Fixture: error — " + err.message;
     }
