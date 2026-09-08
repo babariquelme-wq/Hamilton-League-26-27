@@ -1562,7 +1562,7 @@
 
   // Los datos nunca retroceden: se parte de lo que ya había y se pisa solo lo que
   // Wikipedia trae con información nueva.
-  function mergeFixture(base, fetched){
+  function mergeFixture(base, fetched, soloHuecos){
     const key = m => m.home + "|" + m.away;
     const out = (base || []).map(m => Object.assign({}, m));
     const idx = {};
@@ -1571,7 +1571,9 @@
       const i = idx[key(f)];
       if(i === undefined){ idx[key(f)] = out.length; out.push(f); return; }
       const cur = out[i];
-      if(f.scoreHome !== null && f.scoreAway !== null){ cur.scoreHome = f.scoreHome; cur.scoreAway = f.scoreAway; }
+      const traeResultado = f.scoreHome !== null && f.scoreAway !== null;
+      const hayHueco = cur.scoreHome === null || cur.scoreAway === null;
+      if(traeResultado && (!soloHuecos || hayHueco)){ cur.scoreHome = f.scoreHome; cur.scoreAway = f.scoreAway; }
       if(f.date) cur.date = f.date;
       if(f.time) cur.time = f.time;
       if(f.round != null) cur.round = f.round;
@@ -1629,8 +1631,7 @@
     await saveConfig(config);
     if(config.participants && config.participants.some(p=>p.name)){
       renderDashboard();
-      const fixtureStatusEl = document.getElementById("fixtureStatus");
-      if(fixtureStatusEl && fixtureMsg.startsWith("Fixture: error")) fixtureStatusEl.textContent = fixtureMsg;
+      if(fixtureMsg.startsWith("Fixture: error")) alert(fixtureMsg);
     } else {
       setStatus(true, `${standingsMsg} ${fixtureMsg} — faltan participantes`);
     }
@@ -1745,6 +1746,11 @@
 
   function renderDashboard(){
     config.standings = mergeStandings(config.standings);
+    // El fixture incrustado hace de piso igual que la tabla: rellena los partidos
+    // que la config guardada todavía tiene sin resultado, sin pisar nada más nuevo.
+    config.fixtureMatches = mergeFixture(
+      (config.fixtureMatches && config.fixtureMatches.length) ? config.fixtureMatches : [],
+      HARDCODED_FIXTURE, true);
     document.getElementById("loginSection").style.display = "none";
     els.emptyState.style.display = "none";
     els.dashboard.style.display = "block";
